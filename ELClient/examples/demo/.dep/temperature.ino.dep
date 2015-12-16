@@ -1,0 +1,50 @@
+temperature.o: temperature.ino \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Arduino.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/binary.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/WCharacter.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/WString.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/HardwareSerial.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Stream.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Print.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Printable.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/new.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//variants/standard/pins_arduino.h \
+  ../../../espduino/espduino.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/HardwareSerial.h \
+  /home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Arduino.h \
+  ../../../espduino/FP.h ../../../espduino/crc16.h \
+  ../../../espduino/ringbuf.h ../../../espduino/rest.h
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Arduino.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/binary.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/WCharacter.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/WString.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/HardwareSerial.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Stream.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Print.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Printable.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/new.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//variants/standard/pins_arduino.h:
+
+../../../espduino/espduino.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/HardwareSerial.h:
+
+/home/arduino/arduino-1.0.5/hardware/arduino//cores/arduino/Arduino.h:
+
+../../../espduino/FP.h:
+
+../../../espduino/crc16.h:
+
+../../../espduino/ringbuf.h:
+
+../../../espduino/rest.h:
