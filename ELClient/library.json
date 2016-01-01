@@ -1,0 +1,18 @@
+{
+  "name": "ELClient",
+  "keywords": "wifi, mqtt, rest",
+  "description": "Wifi library (Chip ESP8266 Wifi SoC) using SLIP protocol via Serial port",
+  "url": "https://github.com/jeelabs/esp-link",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/jeelabs/esp-link"
+  },
+  "include": "ELClient",
+  "frameworks": "arduino",
+  "platforms": [
+    "atmelavr",
+    "atmelsam",
+    "teensy"
+  ]
+}
