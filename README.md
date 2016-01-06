@@ -1,23 +1,25 @@
 ELClient
 ========
-This is Wifi library for arduino that uses the SLIP protocol to communicate via serial with ESP8266 modules running [esp-link firmware](https://github.com/jeelabs/esp-link).
+This is a Wifi library for arduino that uses the SLIP protocol to communicate via serial with
+an ESP8266 module running the [esp-link firmware](https://github.com/jeelabs/esp-link).
 
 Features
 ========
-- Rock Solid wifi network client for arduino
-- **More reliable** than AT COMMAND library
-- **ELClient can add additional callbacks that the esp-link firmware can utilize to add additional custom functionality
-- MQTT module: 
-    + MQTT client runs on the esp-link
-    + Support subscribing, publishing, LWT, keep alive pings and all 3 QoS levels (it should be a fully functional client).
-    + Easy to setup and use
-- REST module:
-    + Support method GET, POST, PUT, DELETE
+- C++ classes to manage the communication with esp-link
+- Support outbound REST requests
+- Support MQTT pub/sub
+- Support additional commands to query esp-link about wifi and such
+
+- MQTT functionality: 
+    + MQTT protocol itself implemented by esp-link
+    + Support subscribing, publishing, LWT, keep alive pings and all QoS levels 0&1
+
+- REST functionality:
+    + Support methods GET, POST, PUT, DELETE
     + setContent type, set header, set User Agent
-    + Easy to used API
-    
-Installations
-========
+
+Installation
+============
 **1. Clone this project:**
 
 ```bash
@@ -25,7 +27,7 @@ git clone https://github.com/jeelabs/el-client
 cd el-client
 ```
 
-**2. Program ESP8266:**
+**2. Program the ESP8266:**
 
 - Wiring: ![Program Connection diagram](fritzing/program_esp8266_bb.png?raw=true)
 - Program release firmware:
@@ -45,6 +47,3 @@ Example read DHT11 and send to [thingspeak.com](http://thingspeak.com)
 - Using DHT11 library from: [https://github.com/RobTillaart/Arduino](https://github.com/RobTillaart/Arduino)
 
 ![](images/thingspeak.png)
-
-
-

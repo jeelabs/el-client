@@ -1,19 +1,13 @@
 /**
- * \file
- *       ESP8266 RESTful Bridge example
- * \author
- *       Tuan PM <tuanpm@live.com>
+ * Simple example to demo the El-Client REST calls
+ *
  */
 
-#include <SoftwareSerial.h>
-#include <espduino.h>
-#include <rest.h>
+#include <ElClient.h>
+#include <ElClientRest.h>
 
-SoftwareSerial debugPort(2, 3); // RX, TX
-
-ESP esp(&Serial, &debugPort, 4);
-
-REST rest(&esp);
+ElClient esp(&Serial, -1);
+ElClientRest rest(&esp);
 
 boolean wifiConnected = false;
 
@@ -36,31 +30,21 @@ void wifiCb(void* response)
 }
 
 void setup() {
-  Serial.begin(19200);
-  debugPort.begin(19200);
-  esp.enable();
-  delay(500);
-  esp.reset();
-  delay(500);
+  Serial.begin(115200);
+  esp.init();
   while(!esp.ready());
 
-  debugPort.println("ARDUINO: setup rest client");
-  if(!rest.begin("yourapihere-com-r2pgihowjx7x.runscope.net")) {
-    debugPort.println("ARDUINO: failed to setup rest client");
+  Serial.println("EL-Client ready");
+  if(!rest.begin("api.ipify.org")) {
+    Serial.println("failed to setup rest client");
     while(1);
   }
-
-  /*setup wifi*/
-  debugPort.println("ARDUINO: setup wifi");
-  esp.wifiCb.attach(&wifiCb);
-  esp.wifiConnect("DVES_HOME","wifipassword");
-  debugPort.println("ARDUINO: system started");
 }
 
 void loop() {
-  char response[266];
   esp.process();
   if(wifiConnected) {
+    char response[266];
     rest.get("/");
     if(rest.getResponse(response, 266) == HTTP_STATUS_OK){
       debugPort.println("ARDUINO: GET successful");

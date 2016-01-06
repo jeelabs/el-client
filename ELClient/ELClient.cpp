@@ -48,11 +48,13 @@ void ELClient::protoCompletedCb(void) {
 
 void ELClient::write(uint8_t data) {
   switch (data) {
-  case SLIP_START:
   case SLIP_END:
-  case SLIP_REPL:
-    _serial->write(SLIP_REPL);
-    _serial->write(SLIP_ESC(data));
+    _serial->write(SLIP_ESC);
+    _serial->write(SLIP_ESC_END);
+    break;
+  case SLIP_ESC:
+    _serial->write(SLIP_ESC);
+    _serial->write(SLIP_ESC_ESC);
     break;
   default:
     _serial->write(data);
@@ -66,7 +68,7 @@ void ELClient::write(uint8_t* data, uint16_t len) {
 
 uint16_t ELClient::Request(uint16_t cmd, uint32_t callback, uint32_t _return, uint16_t argc) {
   uint16_t crc = 0;
-  _serial->write(0x7E);
+  _serial->write(SLIP_END);
   write((uint8_t*)&cmd, 2);
   crc = crc16Data((unsigned const char*)&cmd, 2, crc);
 
@@ -128,7 +130,7 @@ uint16_t ELClient::Request(uint16_t crc_in, const __FlashStringHelper* data, uin
 
 uint16_t ELClient::Request(uint16_t crc) {
   write((uint8_t*)&crc, 2);
-  return _serial->write(0x7F);
+  return _serial->write(SLIP_END);
 }
 
 void ELClient::init() {
@@ -136,30 +138,18 @@ void ELClient::init() {
   _proto.bufSize = sizeof(_protoBuf);
   _proto.dataLen = 0;
   _proto.isEsc = 0;
-  if (_chip_pd != -1)
-    pinMode(_chip_pd, OUTPUT);
 }
 
-ELClient::ELClient(Stream* serial, uint8_t chip_pd) :
-_serial(serial), _chip_pd(chip_pd) {
+ELClient::ELClient(Stream* serial) :
+_serial(serial) {
   _debugEn = false;
   init();
 }
 
-ELClient::ELClient(Stream* serial, Stream* debug, uint8_t chip_pd) :
-_serial(serial), _debug(debug), _chip_pd(chip_pd) {
+ELClient::ELClient(Stream* serial, Stream* debug) :
+_serial(serial), _debug(debug) {
   _debugEn = true;
   init();
-}
-
-void ELClient::Enable() {
-  if (_chip_pd != -1)
-    digitalWrite(_chip_pd, HIGH);
-}
-
-void ELClient::Disable() {
-  if (_chip_pd != -1)
-    digitalWrite(_chip_pd, LOW);
 }
 
 void ELClient::DBG(const char* info) {
@@ -173,7 +163,7 @@ boolean ELClient::WaitReturn(uint32_t timeout) {
   return_cmd = 0;
   uint32_t wait = millis();
   while (is_return == false && (millis() - wait < timeout)) {
-    Run();
+    Process();
   }
   return is_return;
 }
@@ -182,42 +172,25 @@ boolean ELClient::WaitReturn() {
   return WaitReturn(ESP_TIMEOUT);
 }
 
-void ELClient::Run() {
+void ELClient::Process() {
   char value;
   while (_serial->available()) {
     value = _serial->read();
-    switch (value) {
-    case SLIP_REPL:
+    if (value == SLIP_ESC) {
       _proto.isEsc = 1;
-      break;
-
-    case SLIP_START:
+    } else if (value == SLIP_END) {
+      if (_proto.dataLen > 0) protoCompletedCb();
       _proto.dataLen = 0;
       _proto.isEsc = 0;
-      _proto.isBegin = 1;
-      break;
-
-    case SLIP_END:
-      protoCompletedCb();
-      _proto.isBegin = 0;
-      break;
-
-    default:
-      if (_proto.isBegin == 0) {
-        if (_debugEn) {
-          _debug->write(value);
-        }
-        break;
-      }
+    } else {
       if (_proto.isEsc) {
-        value ^= 0x20;
+        if (value == SLIP_ESC_END) value = SLIP_END;
+        if (value == SLIP_ESC_ESC) value = SLIP_ESC;
         _proto.isEsc = 0;
       }
-
-      if (_proto.dataLen < _proto.bufSize)
+      if (_proto.dataLen < _proto.bufSize) {
         _proto.buf[_proto.dataLen++] = value;
-
-      break;
+      }
     }
   }
 }

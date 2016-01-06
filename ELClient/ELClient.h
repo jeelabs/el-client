@@ -10,13 +10,15 @@
 
 #define ESP_TIMEOUT 2000
 
-#define SLIP_START 0x7E
-#define SLIP_END  0x7F
-#define SLIP_REPL 0x7D
-#define SLIP_ESC(x) (x ^ 0x20)
+#define SLIP_END  0300        // indicates end of packet
+#define SLIP_ESC  0333        // indicates byte stuffing
+#define SLIP_ESC_END  0334    // ESC ESC_END means END data byte
+#define SLIP_ESC_ESC  0335    // ESC ESC_ESC means ESC data byte
 
+// Enumeration of commands supported by esp-link, this needs to match the definition in
+// esp-link!
 typedef enum {
-  CMD_IS_READY = 0,  
+  CMD_IS_READY = 0,
   CMD_CLEAR_CBS,
   CMD_CB_ADD,
   CMD_CB_EVENTS,
@@ -34,7 +36,7 @@ typedef enum {
   CMD_REST_REQUEST,
   CMD_REST_SETHEADER,
   CMD_REST_EVENTS
-  
+
 } CmdName;
 
 enum WIFI_STATUS {
@@ -51,35 +53,40 @@ typedef struct {
   uint16_t bufSize;
   uint16_t dataLen;
   uint8_t isEsc;
-  uint8_t isBegin;
 } ELClientProtocol;
 
 class ELClient {
   public:
-    ELClient(Stream* serial, Stream* debug, uint8_t chip_pd = -1);
-    ELClient(Stream* serial, uint8_t chip_pd = -1);
+    // Create an esp-link client based on a stream and with a specified debug output stream.
+    ELClient(Stream* serial, Stream* debug);
+    ELClient(Stream* serial);
     Stream* _debug;
 
     uint32_t return_value;
     uint16_t return_cmd;
     boolean is_return;
-    
-    void Run();
+
+    // Initialize and synchronize communication with esp-link with a timeout in milliseconds,
+    // returns true on success
+    boolean Sync(uint32_t timeout=ESP_TIMEOUT);
+    // Process the input stream, call this in loop()
+    void Process();
+    // Start a request
     uint16_t Request(uint16_t cmd, uint32_t callback, uint32_t _return, uint16_t argc);
+    // Add a data block to a request
     uint16_t Request(uint16_t crc_in, uint8_t* data, uint16_t len);
+    // Add a data block from flash to a request
     uint16_t Request(uint16_t crc_in, const __FlashStringHelper* data, uint16_t len);
-    uint16_t Request(uint16_t crc);    
-    void Enable();
-    void Disable();
-    boolean WaitReturn(uint32_t timeout);
-    boolean WaitReturn();
+    // Finish a request
+    uint16_t Request(uint16_t crc);
+    // Busy wait for a response with a timeout in milliseconds, returns true if a response was recv'd
+    boolean WaitReturn(uint32_t timeout=ESP_TIMEOUT);
 
   private:
     Stream* _serial;
     boolean _debugEn;
     ELClientProtocol _proto;
     uint8_t _protoBuf[128];
-    int _chip_pd;
 
     void init();
     void DBG(const char* info);
