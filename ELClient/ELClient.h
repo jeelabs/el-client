@@ -6,7 +6,6 @@
 #include <Arduino.h>
 #include "ELClientResponse.h"
 #include "FP.h"
-#include "ringbuf.h"
 
 #define ESP_TIMEOUT 2000
 
@@ -18,7 +17,9 @@
 // Enumeration of commands supported by esp-link, this needs to match the definition in
 // esp-link!
 typedef enum {
-  CMD_IS_READY = 0,
+  CMD_NULL = 0,
+  CMD_SYNC,
+  CMD_IS_READY,
   CMD_CLEAR_CBS,
   CMD_CB_ADD,
   CMD_CB_EVENTS,
@@ -62,27 +63,33 @@ class ELClient {
     ELClient(Stream* serial);
     Stream* _debug;
 
-    uint32_t return_value;
-    uint16_t return_cmd;
-    boolean is_return;
+    uint32_t return_value; // 32-bit value returned in response
+    uint16_t return_cmd;   // ???
+    boolean is_return;     // flag indicating that response has been received
 
-    // Initialize and synchronize communication with esp-link with a timeout in milliseconds,
-    // returns true on success
-    boolean Sync(uint32_t timeout=ESP_TIMEOUT);
-    // Process the input stream, call this in loop()
-    void Process();
+    //== Requests
     // Start a request
     uint16_t Request(uint16_t cmd, uint32_t callback, uint32_t _return, uint16_t argc);
     // Add a data block to a request
-    uint16_t Request(uint16_t crc_in, uint8_t* data, uint16_t len);
+    uint16_t Request(uint16_t crc_in, const void* data, uint16_t len);
     // Add a data block from flash to a request
     uint16_t Request(uint16_t crc_in, const __FlashStringHelper* data, uint16_t len);
     // Finish a request
-    uint16_t Request(uint16_t crc);
+    void Request(uint16_t crc);
+
+    //== Responses
+    // Initialize and synchronize communication with esp-link with a timeout in milliseconds,
+    // and remove all existing callbacks. Registers the wifiCb and returns true on success
+    boolean Sync(uint32_t timeout=ESP_TIMEOUT);
+    // Process the input stream, call this in loop()
+    void Process();
     // Busy wait for a response with a timeout in milliseconds, returns true if a response was recv'd
     boolean WaitReturn(uint32_t timeout=ESP_TIMEOUT);
 
-  private:
+    // Callback for wifi status changes that must be attached before calling Sync
+    FP<void, void*> wifiCb;
+
+  //private:
     Stream* _serial;
     boolean _debugEn;
     ELClientProtocol _proto;
@@ -93,7 +100,7 @@ class ELClient {
     void protoCompletedCb(void);
     void write(uint8_t data);
     void write(uint8_t* data, uint16_t len);
-    uint8_t crc16Add(unsigned char b, uint8_t acc);
-    uint8_t crc16Data(const unsigned char *data, uint16_t len, uint8_t acc);
+    uint16_t crc16Add(unsigned char b, uint16_t acc);
+    uint16_t crc16Data(const unsigned char *data, uint16_t len, uint16_t acc);
 };
 #endif // _EL_CLIENT_H_

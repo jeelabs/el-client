@@ -19,9 +19,9 @@ boolean ELClientRest::begin(const char* host, uint16_t port, boolean security)
   restCb.attach(this, &ELClientRest::restCallback);
 
   uint16_t crc = _elc->Request(CMD_REST_SETUP, (uint32_t)&restCb, 1, 3);
-  crc = _elc->Request(crc, (uint8_t*)host, strlen(host));
-  crc = _elc->Request(crc, (uint8_t*)&port, 2);
-  crc = _elc->Request(crc, (uint8_t*)&sec, 1);
+  crc = _elc->Request(crc, host, strlen(host));
+  crc = _elc->Request(crc, &port, 2);
+  crc = _elc->Request(crc, &sec, 1);
   _elc->Request(crc);
 
   if (_elc->WaitReturn(timeout) && _elc->return_value != 0){
@@ -44,12 +44,12 @@ void ELClientRest::request(const char* path, const char* method, const char* dat
     crc = _elc->Request(CMD_REST_REQUEST, 0, 0, 5);
   else
     crc = _elc->Request(CMD_REST_REQUEST, 0, 0, 3);
-  crc = _elc->Request(crc, (uint8_t*)&remote_instance, 4);
-  crc = _elc->Request(crc, (uint8_t*)method, strlen(method));
-  crc = _elc->Request(crc, (uint8_t*)path, strlen(path));
+  crc = _elc->Request(crc, &remote_instance, 4);
+  crc = _elc->Request(crc, method, strlen(method));
+  crc = _elc->Request(crc, path, strlen(path));
   if (len > 0){
-    crc = _elc->Request(crc, (uint8_t*)&len, 2);
-    crc = _elc->Request(crc, (uint8_t*)data, len);
+    crc = _elc->Request(crc, &len, 2);
+    crc = _elc->Request(crc, data, len);
   }
 
   _elc->Request(crc);
@@ -116,7 +116,7 @@ uint16_t ELClientRest::getResponse(char* data, uint16_t maxLen)
   response = false;
   uint32_t wait = millis();
   while (response == false && (millis() - wait < timeout)) {
-    _elc->Run();
+    _elc->Process();
   }
   if (response){
     ELClientResponse resp(res);

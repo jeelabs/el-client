@@ -3,52 +3,66 @@
  *
  */
 
-#include <ElClient.h>
-#include <ElClientRest.h>
+#include <ELClient.h>
+#include <ELClientRest.h>
 
-ElClient esp(&Serial, -1);
-ElClientRest rest(&esp);
+// Initialize a connection to esp-link using the normal hardware serial port both for
+// SLIP and for debug messages.
+ELClient esp(&Serial, &Serial);
+// Initialize a REST client on the connection to esp-link
+ELClientRest rest(&esp);
 
 boolean wifiConnected = false;
 
+// Callback made from esp-link to respond to ...
 void wifiCb(void* response)
 {
   uint32_t status;
-  RESPONSE res(response);
+  ELClientResponse res(response); // fetch the response
 
   if(res.getArgc() == 1) {
+    // we expect one argument, which is that wifi status code
     res.popArgs((uint8_t*)&status, 4);
     if(status == STATION_GOT_IP) {
-      debugPort.println("WIFI CONNECTED");
-     
+      Serial.println("WIFI CONNECTED");
       wifiConnected = true;
     } else {
       wifiConnected = false;
     }
-    
   }
 }
 
 void setup() {
-  Serial.begin(115200);
-  esp.init();
-  while(!esp.ready());
+  Serial.begin(115200);   // the baud rate here needs to match the esp-link config
+  Serial.println("EL-Client hello world!");
+  uint16_t crc = esp.crc16Data("\x01\x00\x00\x00\x00\x00\x1C\x01\x00\x00\x01\x00\x04\x00\x00\x00i\x00",18,0);
+  Serial.print("CRC: ");
+  Serial.print(crc,16);
+  Serial.println();
 
-  Serial.println("EL-Client ready");
-  if(!rest.begin("api.ipify.org")) {
-    Serial.println("failed to setup rest client");
-    while(1);
+  esp.wifiCb.attach(wifiCb);
+  bool ok = esp.Sync();   // sync up with esp-link, also removes all previous callbacks
+  Serial.println("EL-Client synced!");
+  ok = ok && rest.begin("http://www.timeapi.org/"); // free API to get the time
+  if (!ok) {
+    Serial.println("setup failed");
+    while(1) ;
   }
+  Serial.println("EL-Client ready");
 }
 
 void loop() {
-  esp.process();
+  // process any responses or input coming from esp_link
+  esp.Process();
+
+  // if we're connected make an HTTP request
   if(wifiConnected) {
-    char response[266];
     rest.get("/");
+
+    char response[266];
     if(rest.getResponse(response, 266) == HTTP_STATUS_OK){
-      debugPort.println("ARDUINO: GET successful");
-      debugPort.println(response);
+      Serial.println("ARDUINO: GET successful");
+      Serial.println(response);
     }
     delay(1000);
   }

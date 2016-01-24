@@ -292,10 +292,12 @@ endif
 ifneq "$(LIBRARIES)" ""
 LIBRARYDIRS := $(foreach lib, $(LIBRARIES), \
 	$(firstword $(wildcard $(addsuffix /$(lib), $(LIBRARYPATH)))))
+$(info LIBRARIES=$(LIBRARIES) LIBRARYDIRS=$(LIBRARYDIRS))
 endif
 LIBRARYDIRS := $(LIBRARYDIRS) \
 	$(addsuffix /utility, $(LIBRARYDIRS)) \
 	$(addsuffix /src, $(LIBRARYDIRS))
+
 
 # files
 TARGET := $(if $(TARGET),$(TARGET),a.out)

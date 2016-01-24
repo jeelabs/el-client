@@ -16,9 +16,9 @@ typedef struct PACKED {
 
 typedef struct PACKED {
   uint16_t cmd;
+  uint16_t argc;
   uint32_t callback;
   uint32_t _return;
-  uint16_t argc;
   ELClientPacketArgs args;
 } ELClientPacket;
 
