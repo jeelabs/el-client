@@ -20,6 +20,16 @@ typedef enum {
 // The ELClientRest class does not support concurrent requests to the same server because
 // only a single response can be recevied at a time and the responses of the two requests
 // may arrive out of order.
+// A major limitation of the REST class is that it does not store the response body. The
+// response status is saved in the class instance, so after a request completes and before
+// the next request is made a call to getResponse will return the status. However, only a pointer
+// to the response body is saved, which means that if any other message arrives and is
+// processed then the response body is overwritten by it. What this means is that if you
+// need the response body you best use waitResponse or ensure that any call to ELClient::process
+// is followed by a call to getResponse. Ideally someone improves this class to take a callback
+// into the user's sketch?
+// Another limitation is that the response body is 100 chars long at most, this is due to the
+// limitation of the SLIP protocol buffer available.
 class ELClientRest {
   public:
     ELClientRest(ELClient *e);
