@@ -1,131 +1,117 @@
+// Copyright (c) 2016 by B. Runnels and T. von Eicken
+
 #include "ELClientRest.h"
+
+typedef enum {
+  HEADER_GENERIC = 0,
+  HEADER_CONTENT_TYPE,
+  HEADER_USER_AGENT
+} HEADER_TYPE;
+
 ELClientRest::ELClientRest(ELClient *e)
 {
   _elc = e;
-  remote_instance = 0;
-  timeout = DEFAULT_REST_TIMEOUT;
-}
-void ELClientRest::restCallback(void *resp)
-{
-  response = true;
-  res = resp;
+  remote_instance = -1;
 }
 
-boolean ELClientRest::begin(const char* host, uint16_t port, boolean security)
+void ELClientRest::restCallback(void *res)
 {
-  uint8_t sec = 0;
-  if (security)
-    sec = 1;
+  if (!res) return;
+
+  ELClientResponse *resp = (ELClientResponse *)res;
+
+  resp->popArg(&_status, sizeof(_status));
+  _elc->_debug->print("REST code ");
+  _elc->_debug->println(_status);
+
+  _len = resp->popArgPtr(&_data);
+}
+
+int ELClientRest::begin(const char* host, uint16_t port, boolean security)
+{
+  uint8_t sec = !!security;
   restCb.attach(this, &ELClientRest::restCallback);
 
-  uint16_t crc = _elc->Request(CMD_REST_SETUP, (uint32_t)&restCb, 1, 3);
-  crc = _elc->Request(crc, host, strlen(host));
-  crc = _elc->Request(crc, &port, 2);
-  crc = _elc->Request(crc, &sec, 1);
-  _elc->Request(crc);
+  _elc->Request(CMD_REST_SETUP, (uint32_t)&restCb, 3);
+  _elc->Request(host, strlen(host));
+  _elc->Request(&port, 2);
+  _elc->Request(&sec, 1);
+  _elc->Request();
 
-  if (_elc->WaitReturn(timeout) && _elc->return_value != 0){
-    remote_instance = _elc->return_value;
-    return true;
+  ELClientPacket *pkt = _elc->WaitReturn();
+  if (pkt && (int32_t)pkt->value >= 0) {
+    remote_instance = pkt->value;
+    return 0;
   }
-  return false;
+  return (int)pkt->value;
 }
 
-boolean ELClientRest::begin(const char* host)
-{
-  return begin(host, 80, false);
-}
 void ELClientRest::request(const char* path, const char* method, const char* data, int len)
 {
-  if (remote_instance == 0)
-    return;
-  uint16_t crc;
-  if (len > 0)
-    crc = _elc->Request(CMD_REST_REQUEST, 0, 0, 5);
-  else
-    crc = _elc->Request(CMD_REST_REQUEST, 0, 0, 3);
-  crc = _elc->Request(crc, &remote_instance, 4);
-  crc = _elc->Request(crc, method, strlen(method));
-  crc = _elc->Request(crc, path, strlen(path));
-  if (len > 0){
-    crc = _elc->Request(crc, &len, 2);
-    crc = _elc->Request(crc, data, len);
+  _status = 0;
+  if (remote_instance < 0) return;
+  if (data != 0 && len > 0) _elc->Request(CMD_REST_REQUEST, remote_instance, 3);
+  else                      _elc->Request(CMD_REST_REQUEST, remote_instance, 2);
+  _elc->Request(method, strlen(method));
+  _elc->Request(path, strlen(path));
+  if (data != NULL && len > 0) {
+    _elc->Request(data, len);
   }
 
-  _elc->Request(crc);
+  _elc->Request();
 }
+
 void ELClientRest::request(const char* path, const char* method, const char* data)
 {
   request(path, method, data, strlen(data));
 }
-void ELClientRest::get(const char* path, const char* data)
-{
-  request(path, "GET", data);
-}
-void ELClientRest::get(const char* path)
-{
-  request(path, "GET", 0, 0);
-}
-void ELClientRest::post(const char* path, const char* data)
-{
-  request(path, "POST", data);
-}
-void ELClientRest::put(const char* path, const char* data)
-{
-  request(path, "PUT", data);
-}
-void ELClientRest::del(const char* path, const char* data)
-{
-  request(path, "DELETE", data);
-}
+
+void ELClientRest::get(const char* path, const char* data) { request(path, "GET", data); }
+void ELClientRest::post(const char* path, const char* data) { request(path, "POST", data); }
+void ELClientRest::put(const char* path, const char* data) { request(path, "PUT", data); }
+void ELClientRest::del(const char* path) { request(path, "DELETE", 0); }
 
 void ELClientRest::setHeader(const char* value)
 {
   uint8_t header_index = HEADER_GENERIC;
-  uint16_t crc = _elc->Request(CMD_REST_SETHEADER, 0, 0, 3);
-  crc = _elc->Request(crc, (uint8_t*)&remote_instance, 4);
-  crc = _elc->Request(crc, (uint8_t*)&header_index, 1);
-  crc = _elc->Request(crc, (uint8_t*)value, strlen(value));
-  _elc->Request(crc);
+  _elc->Request(CMD_REST_SETHEADER, remote_instance, 2);
+  _elc->Request(&header_index, 1);
+  _elc->Request(value, strlen(value));
+  _elc->Request();
 }
+
 void ELClientRest::setContentType(const char* value)
 {
   uint8_t header_index = HEADER_CONTENT_TYPE;
-  uint16_t crc = _elc->Request(CMD_REST_SETHEADER, 0, 0, 3);
-  crc = _elc->Request(crc, (uint8_t*)&remote_instance, 4);
-  crc = _elc->Request(crc, (uint8_t*)&header_index, 1);
-  crc = _elc->Request(crc, (uint8_t*)value, strlen(value));
-  _elc->Request(crc);
+  _elc->Request(CMD_REST_SETHEADER, remote_instance, 2);
+  _elc->Request(&header_index, 1);
+  _elc->Request(value, strlen(value));
+  _elc->Request();
 }
+
 void ELClientRest::setUserAgent(const char* value)
 {
   uint8_t header_index = HEADER_USER_AGENT;
-  uint16_t crc = _elc->Request(CMD_REST_SETHEADER, 0, 0, 3);
-  crc = _elc->Request(crc, (uint8_t*)&remote_instance, 4);
-  crc = _elc->Request(crc, (uint8_t*)&header_index, 1);
-  crc = _elc->Request(crc, (uint8_t*)value, strlen(value));
-  _elc->Request(crc);
-}
-void ELClientRest::setTimeout(uint32_t ms)
-{
-  timeout = ms;
+  _elc->Request(CMD_REST_SETHEADER, remote_instance, 2);
+  _elc->Request(&header_index, 1);
+  _elc->Request(value, strlen(value));
+  _elc->Request();
 }
 
 uint16_t ELClientRest::getResponse(char* data, uint16_t maxLen)
 {
-  response = false;
+  if (_status == 0) return 0;
+  memcpy(data, _data, _len>maxLen?maxLen:_len);
+  int16_t s = _status;
+  _status = 0;
+  return s;
+}
+
+uint16_t ELClientRest::waitResponse(char* data, uint16_t maxLen, uint32_t timeout)
+{
   uint32_t wait = millis();
-  while (response == false && (millis() - wait < timeout)) {
+  while (_status == 0 && (millis() - wait < timeout)) {
     _elc->Process();
   }
-  if (response){
-    ELClientResponse resp(res);
-
-    uint32_t len = resp.popArgs((uint8_t*)data, maxLen);
-    data[len < maxLen ? len : maxLen - 1] = 0;
-    return _elc->return_value;
-  }
-
-
-  return 0;
+  return getResponse(data, maxLen);
 }

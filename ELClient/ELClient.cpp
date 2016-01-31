@@ -2,69 +2,82 @@
 
 #include "ELClient.h"
 
+#define SLIP_END  0300        // indicates end of packet
+#define SLIP_ESC  0333        // indicates byte stuffing
+#define SLIP_ESC_END  0334    // ESC ESC_END means END data byte
+#define SLIP_ESC_ESC  0335    // ESC ESC_ESC means ESC data byte
+
 //===== Input
 
 // Process a received SLIP message
-void ELClient::protoCompletedCb(void) {
+ELClientPacket* ELClient::protoCompletedCb(void) {
   // the packet starts with a ELClientPacket
   ELClientPacket* packet = (ELClientPacket*)_proto.buf;
-  uint16_t crc = 0, argc, len, resp_crc;
-  uint8_t* data_ptr;
-  argc = packet->argc;
-  data_ptr = (uint8_t*)&packet->args;
-  // start the CRC calculation
-  crc = crc16Data((unsigned const char*)&packet->cmd, 12, crc);
-
-  // calculate the CRC over all arguments
-  while (argc--) {
-    len = *((uint16_t*)data_ptr);
-    crc = crc16Data((unsigned const char*)data_ptr, 2, crc);
-    data_ptr += 2;
-    while (len--) {
-      crc = crc16Add(*data_ptr, crc);
-      data_ptr++;
+  if (_debugEn) {
+    _debug->print("ELC: got ");
+    _debug->print(_proto.dataLen);
+    _debug->print(" @");
+    _debug->print((uint32_t)_proto.buf, 16);
+    _debug->print(": ");
+    _debug->print(packet->cmd);
+    _debug->print(" ");
+    _debug->print(packet->value);
+    _debug->print(" ");
+    _debug->print(packet->argc);
+    for (uint16_t i=8; i<_proto.dataLen; i++) {
+      _debug->print(" ");
+      _debug->print(*(uint8_t*)(_proto.buf+i), 16);
     }
+    _debug->println();
   }
 
-  // verify the CRC
-  resp_crc = *(uint16_t*)data_ptr;
+  // verify CRC
+  uint16_t crc = crc16Data(_proto.buf, _proto.dataLen-2, 0);
+  uint16_t resp_crc = *(uint16_t*)(_proto.buf+_proto.dataLen-2);
   if (crc != resp_crc) {
-    DBG((const char*)F("ARD: Invalid CRC"));
-    return;
+    DBG("ELC: Invalid CRC");
+    return NULL;
   }
 
-  // see whether we have a callback response
-  FP<void, void*> *fp;
-  if (packet->callback != 0){
-    // got a callback to deliver
-    fp = (FP<void, void*>*)packet->callback;
-
-    return_cmd = packet->cmd;
-    return_value = packet->_return;
-
-    if (fp->attached())
-      (*fp)((void*)packet);
-  } else {
-    // no callback to deliver, just signal that the call completed
-    if (packet->argc == 0) { // FIXME: what is the purpose of this???
-      is_return = true;
-      return_cmd = packet->cmd;
-      return_value = packet->_return;
+  // dispatch based on command
+  if (packet->cmd == CMD_RESP_V) {
+    // value response
+    _debug->print("RESP_V: ");
+    _debug->println(packet->value);
+    return packet;
+  } else if (packet->cmd == CMD_RESP_CB) {
+    FP<void, void*> *fp;
+    // callback reponse
+    _debug->print("RESP_CB: ");
+    _debug->print(packet->value);
+    _debug->print(" ");
+    _debug->println(packet->argc);
+    fp = (FP<void, void*>*)packet->value;
+    if (fp->attached()) {
+      ELClientResponse resp(packet);
+      (*fp)(&resp);
     }
+    return NULL;
+  } else {
+    // command (NOT IMPLEMENTED)
+    _debug->println("CMD??");
+    return NULL;
   }
 }
 
-// Read all characters available on the serial input and process any messages that arrive
-void ELClient::Process() {
+// Read all characters available on the serial input and process any messages that arrive, but
+// stop if a non-callback response comes in
+ELClientPacket *ELClient::Process() {
   char value;
   while (_serial->available()) {
     value = _serial->read();
     if (value == SLIP_ESC) {
       _proto.isEsc = 1;
     } else if (value == SLIP_END) {
-      if (_proto.dataLen > 0) protoCompletedCb();
+      ELClientPacket *packet = _proto.dataLen >= 8 ? protoCompletedCb() : 0;
       _proto.dataLen = 0;
       _proto.isEsc = 0;
+      if (packet != NULL) return packet;
     } else {
       if (_proto.isEsc) {
         if (value == SLIP_ESC_END) value = SLIP_END;
@@ -76,6 +89,7 @@ void ELClient::Process() {
       }
     }
   }
+  return NULL;
 }
 
 //===== Output
@@ -97,89 +111,76 @@ void ELClient::write(uint8_t data) {
 }
 
 // Write some bytes to the output stream
-void ELClient::write(uint8_t* data, uint16_t len) {
+void ELClient::write(void* data, uint16_t len) {
+  uint8_t *d = (uint8_t*)data;
   while (len--)
-    write(*data++);
+    write(*d++);
 }
 
-// Start a request. cmd=command, callback=address of callback pointer,
-// _return=a token that is sent with the response, argc=argument count
-uint16_t ELClient::Request(uint16_t cmd, uint32_t callback, uint32_t _return, uint16_t argc) {
-  uint16_t crc = 0;
+// Start a request. cmd=command, value=address of callback pointer or first arg,
+// argc=additional argument count
+void ELClient::Request(uint16_t cmd, uint32_t value, uint16_t argc) {
+  crc = 0;
   _serial->write(SLIP_END);
-  write((uint8_t*)&cmd, 2);
+  write(&cmd, 2);
   crc = crc16Data((unsigned const char*)&cmd, 2, crc);
 
-  write((uint8_t*)&callback, 4);
-  crc = crc16Data((unsigned const char*)&callback, 4, crc);
-
-  write((uint8_t*)&_return, 4);
-  crc = crc16Data((unsigned const char*)&_return, 4, crc);
-
-  write((uint8_t*)&argc, 2);
+  write(&argc, 2);
   crc = crc16Data((unsigned const char*)&argc, 2, crc);
-  return crc;
+
+  write(&value, 4);
+  crc = crc16Data((unsigned const char*)&value, 4, crc);
 }
 
 // Append a block of data as an argument to the request
-uint16_t ELClient::Request(uint16_t crc_in, void* data, uint16_t len) {
-  uint8_t temp = 0;
+void ELClient::Request(const void* data, uint16_t len) {
   uint8_t *d = (uint8_t*)data;
 
-  // all arguments get padded to a multiple of 4 bytes so they stay aligned, write the amount
-  // of padding we're gonna perform
-  uint16_t pad_len = len;
-  while (pad_len % 4 != 0)
-    pad_len++;
-  write((uint8_t*)&pad_len, 2);
-  crc_in = crc16Data((unsigned const char*)&pad_len, 2, crc_in);
+  // write the length
+  write(&len, 2);
+  crc = crc16Data((unsigned const char*)&len, 2, crc);
 
   // output the data
-  while (len--) {
+  for (uint16_t l=len; l>0; l--) {
     write(*d);
-    crc_in = crc16Add(*d, crc_in);
+    crc = crc16Add(*d, crc);
     d++;
-    if (pad_len > 0) pad_len--;
   }
 
-  // output the padding
-  while (pad_len--) {
+  // output padding
+  uint16_t pad = (4-(len&3))&3;
+  uint8_t temp = 0;
+  while (pad--) {
     write(temp);
-    crc_in = crc16Add(temp, crc_in);
+    crc = crc16Add(temp, crc);
   }
-  return crc_in;
 }
 
 // Append a block of data located in flash as an argument to the request
-uint16_t ELClient::Request(uint16_t crc_in, const __FlashStringHelper* data, uint16_t len) {
-  uint8_t temp = 0;
-
-  // output the length of the padding
-  uint16_t pad_len = len;
-  while (pad_len % 4 != 0)
-    pad_len++;
-  write((uint8_t*)&pad_len, 2);
-  crc_in = crc16Data((unsigned const char*)&pad_len, 2, crc_in);
+void ELClient::Request(const __FlashStringHelper* data, uint16_t len) {
+  // write the length
+  write(&len, 2);
+  crc = crc16Data((unsigned const char*)&len, 2, crc);
 
   // output the data
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  while (len--) {
+  for (uint16_t l=len; l>0; l--) {
     uint8_t c = pgm_read_byte(p++);
     write(c);
-    crc_in = crc16Add(c, crc_in);
-    if (pad_len > 0) pad_len--;
+    crc = crc16Add(c, crc);
   }
 
-  // output the padding
-  while (pad_len--) {
+  // output padding
+  uint16_t pad = (4-(len&3))&3;
+  uint8_t temp = 0;
+  while (pad--) {
     write(temp);
-    crc_in = crc16Add(*&temp, crc_in);
+    crc = crc16Add(temp, crc);
   }
-  return crc_in;
 }
 
 // Append the final CRC to the request and finish the request
-void ELClient::Request(uint16_t crc) {
+void ELClient::Request(void) {
   write((uint8_t*)&crc, 2);
   _serial->write(SLIP_END);
 }
@@ -206,22 +207,19 @@ _debug(debug), _serial(serial) {
 }
 
 void ELClient::DBG(const char* info) {
-  if (_debugEn)
-    _debug->println(info);
+  if (_debugEn) _debug->println(info);
 }
 
 //===== Responses
 
 // Wait for a response for a given timeout
-boolean ELClient::WaitReturn(uint32_t timeout) {
-  is_return = false;
-  return_value = 0;
-  return_cmd = 0;
+ELClientPacket *ELClient::WaitReturn(uint32_t timeout) {
   uint32_t wait = millis();
-  while (is_return == false && (millis() - wait < timeout)) {
-    Process();
+  while (millis() - wait < timeout) {
+    ELClientPacket *packet = Process();
+    if (packet != NULL) return packet;
   }
-  return is_return;
+  return NULL;
 }
 
 //===== CRC helper functions
@@ -246,15 +244,21 @@ uint16_t ELClient::crc16Data(const unsigned char *data, uint16_t len, uint16_t a
 //===== Basic requests built into ElClient
 
 boolean ELClient::Sync(uint32_t timeout) {
-  // generate a hopefully unique number
-  uint32_t nonce = micros();
   // send sync request
-  uint16_t crc = Request(CMD_SYNC, 0, nonce, 1);
-  crc = Request(crc, &wifiCb, 4);
-  Request(crc);
-  // empty the response queue hoping to find out magic number
-  while (WaitReturn(timeout))
-    if (return_value == nonce) return true;
+  Request(CMD_SYNC, (uint32_t)&wifiCb, 0);
+  Request();
+  // empty the response queue hoping to find the wifiCb address
+  ELClientPacket *packet;
+  while ((packet = WaitReturn(timeout)) != NULL) {
+    if (packet->value == (uint32_t)&wifiCb) { _debug->println("SYNC!"); return true; }
+    _debug->print("BAD: ");
+    _debug->println(packet->value);
+  }
   // doesn't look like we got a real response
   return false;
+}
+
+void ELClient::GetWifiStatus(void) {
+  Request(CMD_WIFI_STATUS, 0, 0);
+  Request();
 }

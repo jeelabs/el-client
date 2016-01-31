@@ -1,3 +1,5 @@
+// Copyright (c) 2016 by B. Runnels and T. von Eicken
+
 #ifndef _EL_CLIENT_REST_H_
 #define _EL_CLIENT_REST_H_
 
@@ -5,45 +7,74 @@
 #include "FP.h"
 #include "ELClient.h"
 
+// Default timeout for REST requests when waiting for a response
 #define DEFAULT_REST_TIMEOUT  5000
-
-typedef enum {
-  HEADER_GENERIC = 0,
-  HEADER_CONTENT_TYPE,
-  HEADER_USER_AGENT
-} HEADER_TYPE;
 
 typedef enum {
   HTTP_STATUS_OK = 200
 } HTTP_STATUS;
 
+// The ELClientRest class makes simple REST requests to a remote server. Each instance
+// is used to communicate with one server and multiple instances can be created to make
+// requests to multiple servers.
+// The ELClientRest class does not support concurrent requests to the same server because
+// only a single response can be recevied at a time and the responses of the two requests
+// may arrive out of order.
 class ELClientRest {
   public:
     ELClientRest(ELClient *e);
-    boolean begin(const char* host, uint16_t port, boolean security);
-    boolean begin(const char* host);
-    void request(const char* path, const char* method, const char* data);
-    void request(const char* path, const char* method, const char* data, int len);
-    void get(const char* path, const char* data);
-    void get(const char* path);
-    void post(const char* path, const char* data);
-    void put(const char* path, const char* data);
-    void del(const char* path, const char* data);
 
-    void setTimeout(uint32_t ms);
+    // Initialize communication to a remote server, this communicates with esp-link but does not
+    // open a connection to the remote server. Host may be a hostname or an IP address,
+    // security causes HTTPS to be used (not yet supported). Returns 0 if the set-up is
+    // successful, returns a negative error code if it failed.
+    int begin(const char* host, uint16_t port=80, boolean security=false);
+
+    // Make a request to the remote server. The data must be null-terminated
+    void request(const char* path, const char* method, const char* data=NULL);
+
+    // Make a request to the remote server.
+    void request(const char* path, const char* method, const char* data, int len);
+
+    // Make a GET request to the remote server with NULL-terminated data
+    void get(const char* path, const char* data=NULL);
+
+    // Make a POST request to the remote server with NULL-terminated data
+    void post(const char* path, const char* data);
+
+    // Make a PUT request to the remote server with NULL-terminated data
+    void put(const char* path, const char* data);
+
+    // Make a DELETE request to the remote server
+    void del(const char* path);
+
+    // Retrieve the response from the remote server, returns the HTTP status code, 0 if no
+    // response (may need to wait longer)
     uint16_t getResponse(char* data, uint16_t maxLen);
+
+    // Wait for the response from the remote server, returns the HTTP status code, 0 if no
+    // response (timeout occurred)
+    uint16_t waitResponse(char* data, uint16_t maxLen, uint32_t timeout=DEFAULT_REST_TIMEOUT);
+
+    // Set the user-agent for all subsequent requests
     void setUserAgent(const char* value);
-    // Set Content-Type Header
+
+    // Set the Content-Type Header for all subsequent requests
     void setContentType(const char* value);
+
+    // Set a custom header for all subsequent requests
     void setHeader(const char* value);
 
   private:
-    uint32_t remote_instance, timeout;
+    int32_t remote_instance;
     ELClient *_elc;
     void restCallback(void* resp);
     FP<void, void*> restCb;
-    boolean response;
-    void *res;
+
+    int16_t _status;
+    uint16_t _len;
+    void *_data;
+
 
 };
 #endif // _EL_CLIENT_REST_H_

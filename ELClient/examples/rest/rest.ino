@@ -15,40 +15,58 @@ ELClientRest rest(&esp);
 boolean wifiConnected = false;
 
 // Callback made from esp-link to respond to ...
-void wifiCb(void* response)
-{
-  uint32_t status;
-  ELClientResponse res(response); // fetch the response
+void wifiCb(void *response) {
+  ELClientResponse *res = (ELClientResponse*)response;
+  if (res->argc() == 1) {
+    uint8_t status;
+    res->popArg(&status, 1);
 
-  if(res.getArgc() == 1) {
-    // we expect one argument, which is that wifi status code
-    res.popArgs((uint8_t*)&status, 4);
     if(status == STATION_GOT_IP) {
       Serial.println("WIFI CONNECTED");
       wifiConnected = true;
     } else {
+      Serial.print("WIFI NOT READY: ");
+      Serial.println(status);
       wifiConnected = false;
     }
+  } else {
+    Serial.print("WIFI CB argc=");
+    Serial.println(res->argc());
   }
 }
 
 void setup() {
   Serial.begin(115200);   // the baud rate here needs to match the esp-link config
-  Serial.println("EL-Client hello world!");
-  uint16_t crc = esp.crc16Data("\x01\x00\x00\x00\x00\x00\x1C\x01\x00\x00\x01\x00\x04\x00\x00\x00i\x00",18,0);
-  Serial.print("CRC: ");
-  Serial.print(crc,16);
-  Serial.println();
+  Serial.println("EL-Client starting!");
 
-  esp.wifiCb.attach(wifiCb);
-  bool ok = esp.Sync();   // sync up with esp-link, also removes all previous callbacks
+  // Sync-up with esp-link, this is required at the start of any sketch and initializes the
+  // callbacks with just a simple wifi status change callback.
+  esp.wifiCb.attach(wifiCb); // wifi status change callback, optional (delete if not desired)
+  bool ok;
+  do {
+    ok = esp.Sync();      // sync up with esp-link, blocks for up to 2 seconds
+    if (!ok) Serial.println("EL-Client sync failed!");
+  } while(!ok);
   Serial.println("EL-Client synced!");
-  ok = ok && rest.begin("http://www.timeapi.org/"); // free API to get the time
-  if (!ok) {
-    Serial.println("setup failed");
+
+  // Get immediate wifi status info for demo purposes. This is not normally used because the
+  // wifi status callback registered above gets called immediately. 
+  esp.GetWifiStatus();
+  ELClientPacket *packet;
+  while ((packet=esp.WaitReturn()) != NULL) {
+    if (packet->cmd == CMD_WIFI_STATUS) {
+      Serial.print("Wifi status: ");
+      Serial.print(packet->value);
+    }
+  }
+
+  int err = rest.begin("www.timeapi.org");
+  if (err != 0) {
+    Serial.print("REST begin failed: ");
+    Serial.println(err);
     while(1) ;
   }
-  Serial.println("EL-Client ready");
+  Serial.println("EL-REST ready");
 }
 
 void loop() {
@@ -57,12 +75,16 @@ void loop() {
 
   // if we're connected make an HTTP request
   if(wifiConnected) {
-    rest.get("/");
+    rest.get("/utc/now");
 
     char response[266];
-    if(rest.getResponse(response, 266) == HTTP_STATUS_OK){
-      Serial.println("ARDUINO: GET successful");
+    uint16_t code = rest.waitResponse(response, 266);
+    if(code == HTTP_STATUS_OK){
+      Serial.println("ARDUINO: GET successful:");
       Serial.println(response);
+    } else {
+      Serial.print("ARDUINO: GET failed: ");
+      Serial.println(code);
     }
     delay(1000);
   }
