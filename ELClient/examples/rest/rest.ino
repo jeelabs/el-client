@@ -9,12 +9,14 @@
 // Initialize a connection to esp-link using the normal hardware serial port both for
 // SLIP and for debug messages.
 ELClient esp(&Serial, &Serial);
+
 // Initialize a REST client on the connection to esp-link
 ELClientRest rest(&esp);
 
 boolean wifiConnected = false;
 
-// Callback made from esp-link to respond to ...
+// Callback made from esp-link to notify of wifi status changes
+// Here we print something out and set a global flag
 void wifiCb(void *response) {
   ELClientResponse *res = (ELClientResponse*)response;
   if (res->argc() == 1) {
@@ -29,9 +31,6 @@ void wifiCb(void *response) {
       Serial.println(status);
       wifiConnected = false;
     }
-  } else {
-    Serial.print("WIFI CB argc=");
-    Serial.println(res->argc());
   }
 }
 
@@ -40,7 +39,8 @@ void setup() {
   Serial.println("EL-Client starting!");
 
   // Sync-up with esp-link, this is required at the start of any sketch and initializes the
-  // callbacks with just a simple wifi status change callback.
+  // callbacks to the wifi status change callback. The callback gets called with the initial
+  // status right after Sync() below completes.
   esp.wifiCb.attach(wifiCb); // wifi status change callback, optional (delete if not desired)
   bool ok;
   do {
@@ -53,13 +53,13 @@ void setup() {
   // wifi status callback registered above gets called immediately. 
   esp.GetWifiStatus();
   ELClientPacket *packet;
-  while ((packet=esp.WaitReturn()) != NULL) {
-    if (packet->cmd == CMD_WIFI_STATUS) {
-      Serial.print("Wifi status: ");
-      Serial.print(packet->value);
-    }
+  if ((packet=esp.WaitReturn()) != NULL) {
+    Serial.print("Wifi status: ");
+    Serial.println(packet->value);
   }
 
+  // Set up the REST client to talk to www.timeapi.org, this doesn't connect to that server,
+  // it just sets-up stuff on the esp-link side
   int err = rest.begin("www.timeapi.org");
   if (err != 0) {
     Serial.print("REST begin failed: ");
@@ -70,11 +70,12 @@ void setup() {
 }
 
 void loop() {
-  // process any responses or input coming from esp_link
+  // process any callbacks coming from esp_link
   esp.Process();
 
   // if we're connected make an HTTP request
   if(wifiConnected) {
+    // Request /utc/now from the previously set-up server
     rest.get("/utc/now");
 
     char response[266];
