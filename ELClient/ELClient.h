@@ -22,7 +22,7 @@ typedef enum {
   CMD_GET_TIME,     // get current time in seconds since the unix epoch
   //CMD_GET_INFO,
 
-  CMD_MQTT_INIT = 10,
+  CMD_MQTT_SETUP = 10,
   CMD_MQTT_PUBLISH,
   CMD_MQTT_SUBSCRIBE,
   CMD_MQTT_LWT,

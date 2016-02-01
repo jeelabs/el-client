@@ -1,6 +1,5 @@
 /**
  * Simple example to demo the El-Client REST calls
- *
  */
 
 #include <ELClient.h>

@@ -1,105 +1,105 @@
 /**
- * \file
- *       ESP8266 MQTT Bridge example
- * \author
- *       Tuan PM <tuanpm@live.com>
+ * Simple example to demo the esp-link MQTT client
  */
-//#include <SoftwareSerial.h>
-#include <espduino.h>
-#include <mqtt.h>
 
-//SoftwareSerial debugPort(2, 3); // RX, TX
-ESP esp(&Serial, &Serial, 4);
-MQTT mqtt(&esp);
-boolean wifiConnected = false;
+#include <ELClient.h>
+#include <ELClientMqtt.h>
 
-void wifiCb(void* response)
-{
-  uint32_t status;
-  RESPONSE res(response);
+// Initialize a connection to esp-link using the normal hardware serial port both for
+// SLIP and for debug messages.
+ELClient esp(&Serial, &Serial);
 
-  if(res.getArgc() == 1) {
-    res.popArgs((uint8_t*)&status, 4);
+// Initialize the MQTT client
+ELClientMqtt mqtt(&esp);
+
+// Callback made from esp-link to notify of wifi status changes
+// Here we just print something out for grins
+void wifiCb(void* response) {
+  ELClientResponse *res = (ELClientResponse*)response;
+  if (res->argc() == 1) {
+    uint8_t status;
+    res->popArg(&status, 1);
+
     if(status == STATION_GOT_IP) {
-      Serial.println("Wifi connected");
-      mqtt.connect("yourserver.com", 1883, false);
-      wifiConnected = true;
-      //or mqtt.connect("host", 1883); /*without security ssl*/
+      Serial.println("WIFI CONNECTED");
     } else {
-      wifiConnected = false;
-      mqtt.disconnect();
+      Serial.print("WIFI NOT READY: ");
+      Serial.println(status);
     }
-    
   }
 }
 
-void mqttConnected(void* response)
-{
-  Serial.println("MQTT connected");
-  mqtt.subscribe("/topic/0"); //or mqtt.subscribe("topic"); /*with qos = 0*/
-  mqtt.subscribe("/topic/1");
-  mqtt.subscribe("/topic/2");
-  mqtt.publish("/topic/0", "data0");
+bool connected;
 
+// Callback when MQTT is connected
+void mqttConnected(void* response) {
+  Serial.println("MQTT connected!");
+  mqtt.subscribe("/esp-link/1");
+  //mqtt.subscribe("/esp-link/2", 1);
+  //mqtt.publish("/esp-link/0", "test1");
+  connected = true;
 }
-void mqttDisconnected(void* response)
-{
 
+void mqttDisconnected(void* response) {
+  Serial.println("MQTT disconnected");
+  connected = false;
 }
-void mqttData(void* response)
-{
-  RESPONSE res(response);
+
+void mqttData(void* response) {
+  ELClientResponse *res = (ELClientResponse *)response;
 
   Serial.print("Received: topic=");
-  String topic = res.popString();
+  String topic = res->popString();
   Serial.println(topic);
 
   Serial.print("data=");
-  String data = res.popString();
+  String data = res->popString();
   Serial.println(data);
-
 }
-void mqttPublished(void* response)
-{
 
+void mqttPublished(void* response) {
+  Serial.println("MQTT published");
 }
+
 void setup() {
   Serial.begin(115200);
-  esp.enable();
-  delay(500);
-  esp.reset();
-  delay(500);
-  while(!esp.ready());
+  Serial.println("EL-Client starting!");
 
-  Serial.println("ARDUINO: setup mqtt client");
-  if(!mqtt.begin("DVES_duino", "admin", "Isb_C4OGD4c3", 120, 1)) {
-    Serial.println("ARDUINO: fail to setup mqtt");
-    while(1);
-  }
+  // Sync-up with esp-link, this is required at the start of any sketch and initializes the
+  // callbacks to the wifi status change callback. The callback gets called with the initial
+  // status right after Sync() below completes.
+  esp.wifiCb.attach(wifiCb); // wifi status change callback, optional (delete if not desired)
+  bool ok;
+  do {
+    ok = esp.Sync();      // sync up with esp-link, blocks for up to 2 seconds
+    if (!ok) Serial.println("EL-Client sync failed!");
+  } while(!ok);
+  Serial.println("EL-Client synced!");
 
+  // Set-up callbacks for events and initialize with es-link.
+  mqtt.connectedCb.attach(mqttConnected);
+  mqtt.disconnectedCb.attach(mqttDisconnected);
+  mqtt.publishedCb.attach(mqttPublished);
+  mqtt.dataCb.attach(mqttData);
+  mqtt.setup();
 
-  Serial.println("ARDUINO: setup mqtt lwt");
-  mqtt.lwt("/lwt", "offline", 0, 0); //or mqtt.lwt("/lwt", "offline");
+  //Serial.println("ARDUINO: setup mqtt lwt");
+  //mqtt.lwt("/lwt", "offline", 0, 0); //or mqtt.lwt("/lwt", "offline");
 
-/*setup mqtt events */
-  mqtt.connectedCb.attach(&mqttConnected);
-  mqtt.disconnectedCb.attach(&mqttDisconnected);
-  mqtt.publishedCb.attach(&mqttPublished);
-  mqtt.dataCb.attach(&mqttData);
-
-  /*setup wifi*/
-  Serial.println("ARDUINO: setup wifi");
-  esp.wifiCb.attach(&wifiCb);
-
-  esp.wifiConnect("DVES_HOME","wifipassword");
-
-
-  Serial.println("ARDUINO: system started");
+  Serial.println("EL-MQTT ready");
 }
 
-void loop() {
-  esp.process();
-  if(wifiConnected) {
+static int count;
+static uint32_t last;
 
+void loop() {
+  esp.Process();
+
+  if (connected && (millis()-last) > 4000) {
+    Serial.println("publishing");
+    char buf[12];
+    itoa(count++, buf, 11);
+    mqtt.publish("/esp-link/1", buf);
+    last = millis();
   }
 }
