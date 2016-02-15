@@ -68,7 +68,7 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
 // Read all characters available on the serial input and process any messages that arrive, but
 // stop if a non-callback response comes in
 ELClientPacket *ELClient::Process() {
-  char value;
+  int value;
   while (_serial->available()) {
     value = _serial->read();
     if (value == SLIP_ESC) {
