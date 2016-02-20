@@ -35,16 +35,19 @@ bool connected;
 void mqttConnected(void* response) {
   Serial.println("MQTT connected!");
   mqtt.subscribe("/esp-link/1");
+  mqtt.subscribe("/rumah/pompa/#");
   //mqtt.subscribe("/esp-link/2", 1);
   //mqtt.publish("/esp-link/0", "test1");
   connected = true;
 }
 
+// Callback when MQTT is disconnected
 void mqttDisconnected(void* response) {
   Serial.println("MQTT disconnected");
   connected = false;
 }
 
+// Callback when an MQTT message arrives for one of our subscriptions
 void mqttData(void* response) {
   ELClientResponse *res = (ELClientResponse *)response;
 
@@ -98,8 +101,13 @@ void loop() {
   if (connected && (millis()-last) > 4000) {
     Serial.println("publishing");
     char buf[12];
+
     itoa(count++, buf, 11);
     mqtt.publish("/esp-link/1", buf);
+
+    itoa(count+99, buf, 11);
+    mqtt.publish("/rumah/pompa/pressureHead", buf);
+
     last = millis();
   }
 }

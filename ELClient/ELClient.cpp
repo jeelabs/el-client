@@ -19,11 +19,11 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
     _debug->print(" @");
     _debug->print((uint32_t)_proto.buf, 16);
     _debug->print(": ");
-    _debug->print(packet->cmd);
+    _debug->print(packet->cmd, 16);
     _debug->print(" ");
-    _debug->print(packet->value);
+    _debug->print(packet->value, 16);
     _debug->print(" ");
-    _debug->print(packet->argc);
+    _debug->print(packet->argc, 16);
     for (uint16_t i=8; i<_proto.dataLen; i++) {
       _debug->print(" ");
       _debug->print(*(uint8_t*)(_proto.buf+i), 16);
