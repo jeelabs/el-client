@@ -27,7 +27,7 @@ class ELClientMqtt {
     // callbacks that can be attached prior to calling setup
     FP<void, void*> connectedCb;    // callback with no args when MQTT is connected
     FP<void, void*> disconnectedCb; // callback with no args when MQTT is disconnected
-    FP<void, void*> publishedCb;    // callback when a message is published (should this be for qos=1 only?)
+    FP<void, void*> publishedCb;    // not yet implemented
     FP<void, void*> dataCb;         // callback when a message is received, called with two arguments:
                                     // the topic and the message (max ~110 bytes for both)
 
