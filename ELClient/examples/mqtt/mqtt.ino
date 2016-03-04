@@ -102,10 +102,10 @@ void loop() {
     Serial.println("publishing");
     char buf[12];
 
-    itoa(count++, buf, 11);
+    itoa(count++, buf, 10);
     mqtt.publish("/esp-link/1", buf);
 
-    itoa(count+99, buf, 11);
+    itoa(count+99, buf, 10);
     mqtt.publish("/rumah/pompa/pressureHead", buf);
 
     last = millis();
