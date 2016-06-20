@@ -3,11 +3,15 @@
  */
 
 #include <ELClient.h>
+#include <ELClientCmd.h>
 #include <ELClientMqtt.h>
 
 // Initialize a connection to esp-link using the normal hardware serial port both for
 // SLIP and for debug messages.
 ELClient esp(&Serial, &Serial);
+
+// Initialize CMD client (for GetTime)
+ELClientCmd cmd(&esp);
 
 // Initialize the MQTT client
 ELClientMqtt mqtt(&esp);
@@ -35,7 +39,7 @@ bool connected;
 void mqttConnected(void* response) {
   Serial.println("MQTT connected!");
   mqtt.subscribe("/esp-link/1");
-  mqtt.subscribe("/rumah/pompa/#");
+  mqtt.subscribe("/hello/world/#");
   //mqtt.subscribe("/esp-link/2", 1);
   //mqtt.publish("/esp-link/0", "test1");
   connected = true;
@@ -106,7 +110,10 @@ void loop() {
     mqtt.publish("/esp-link/1", buf);
 
     itoa(count+99, buf, 10);
-    mqtt.publish("/rumah/pompa/pressureHead", buf);
+    mqtt.publish("/hello/world/arduino", buf);
+
+    uint32_t t = cmd.GetTime();
+    Serial.print("Time: "); Serial.println(t);
 
     last = millis();
   }

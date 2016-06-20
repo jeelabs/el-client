@@ -8,7 +8,7 @@ ELClientMqtt::ELClientMqtt(ELClient* elc) :_elc(elc) {}
 
 // setup -- push callbacks to esp-link
 void ELClientMqtt::setup(void) {
-  Serial.print("ConnectedCB is 0x"); Serial.println((uint32_t)&connectedCb, 16);
+  Serial.print(F("ConnectedCB is 0x")); Serial.println((uint32_t)&connectedCb, 16);
   _elc->Request(CMD_MQTT_SETUP, 0, 4);
   uint32_t cb = (uint32_t)&connectedCb;
   _elc->Request(&cb, 4);
