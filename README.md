@@ -25,8 +25,8 @@ Examples
 Currently two examples are provided that are known to work and that come with HEX files ready
 to load into an Atmega 328 based arduino:
 - A REST example that fetches the current time from a server on the internet and prints it.
-  This example is in `./ELClient/examples/rest`
+  This example is in `./ELClient/examples/rest`.
 - An MQTT example that publishes messages to an MQTT server and subscribes so it receives and
-  prints its own messages.
+  prints its own messages. This example is in `./ELClient/examples/mqtt`.
 
 The "thingspeak" and "demo" examples are currently not maintained and therefore won't work as-is.
