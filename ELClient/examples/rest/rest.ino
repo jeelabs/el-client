@@ -68,6 +68,8 @@ void setup() {
   Serial.println("EL-REST ready");
 }
 
+#define BUFLEN 266
+
 void loop() {
   // process any callbacks coming from esp_link
   esp.Process();
@@ -77,8 +79,9 @@ void loop() {
     // Request /utc/now from the previously set-up server
     rest.get("/utc/now");
 
-    char response[266];
-    uint16_t code = rest.waitResponse(response, 266);
+    char response[BUFLEN];
+    memset(response, 0, BUFLEN);
+    uint16_t code = rest.waitResponse(response, BUFLEN);
     if(code == HTTP_STATUS_OK){
       Serial.println("ARDUINO: GET successful:");
       Serial.println(response);
