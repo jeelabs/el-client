@@ -3,6 +3,8 @@ ELClient
 This is a Wifi library for arduino that uses the SLIP protocol to communicate via serial with
 an ESP8266 module running the [esp-link firmware](https://github.com/jeelabs/esp-link).
 
+This library requires esp-link v2.2.beta2 or later.
+
 Features
 ========
 - C++ classes to manage the communication with esp-link
@@ -18,32 +20,13 @@ Features
     + Support methods GET, POST, PUT, DELETE
     + setContent type, set header, set User Agent
 
-Installation
-============
-**1. Clone this project:**
+Examples
+========
+Currently two examples are provided that are known to work and that come with HEX files ready
+to load into an Atmega 328 based arduino:
+- A REST example that fetches the current time from a server on the internet and prints it.
+  This example is in `./ELClient/examples/rest`
+- An MQTT example that publishes messages to an MQTT server and subscribes so it receives and
+  prints its own messages.
 
-```bash
-git clone https://github.com/jeelabs/el-client
-cd el-client
-```
-
-**2. Program the ESP8266:**
-
-- Wiring: ![Program Connection diagram](fritzing/program_esp8266_bb.png?raw=true)
-- Program release firmware:
-
-```python
-esp8266/tools/esptool.py -p COM1 write_flash 0x00000 esp-link/0x00000.bin 0x40000 esp-link/0x40000.bin
-```
-
-**3. Wiring:**
-![Program Connection diagram](fritzing/esp8266_bb.png?raw=true)
-
-**4. Import arduino library and run example:**
-
-Example read DHT11 and send to [thingspeak.com](http://thingspeak.com)
-=========
-- ```espduino/examples/thingspeak/thingspeak.ino```
-- Using DHT11 library from: [https://github.com/RobTillaart/Arduino](https://github.com/RobTillaart/Arduino)
-
-![](images/thingspeak.png)
+The "thingspeak" and "demo" examples are currently not maintained and therefore won't work as-is.
