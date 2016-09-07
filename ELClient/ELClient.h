@@ -31,6 +31,11 @@ typedef enum {
   CMD_REST_REQUEST,
   CMD_REST_SETHEADER,
 
+  CMD_TCP_SETUP = 30,
+  CMD_TCP_SEND,
+
+  CMD_UDP_SETUP = 40,
+  CMD_UDP_SEND,
 } CmdName;
 
 enum WIFI_STATUS {

@@ -42,16 +42,20 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
   // dispatch based on command
   if (packet->cmd == CMD_RESP_V) {
     // value response
-    _debug->print("RESP_V: ");
-    _debug->println(packet->value);
+    if (_debugEn) {
+        _debug->print("RESP_V: ");
+        _debug->println(packet->value);
+    }
     return packet;
   } else if (packet->cmd == CMD_RESP_CB) {
     FP<void, void*> *fp;
     // callback reponse
-    _debug->print("RESP_CB: ");
-    _debug->print(packet->value);
-    _debug->print(" ");
-    _debug->println(packet->argc);
+    if (_debugEn) {
+        _debug->print("RESP_CB: ");
+        _debug->print(packet->value);
+        _debug->print(" ");
+        _debug->println(packet->argc);
+    }
     fp = (FP<void, void*>*)packet->value;
     if (fp->attached()) {
       ELClientResponse resp(packet);
@@ -60,7 +64,7 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
     return NULL;
   } else {
     // command (NOT IMPLEMENTED)
-    _debug->println("CMD??");
+    if (_debugEn) _debug->println("CMD??");
     return NULL;
   }
 }
@@ -250,9 +254,14 @@ boolean ELClient::Sync(uint32_t timeout) {
   // empty the response queue hoping to find the wifiCb address
   ELClientPacket *packet;
   while ((packet = WaitReturn(timeout)) != NULL) {
-    if (packet->value == (uint32_t)&wifiCb) { _debug->println("SYNC!"); return true; }
-    _debug->print("BAD: ");
-    _debug->println(packet->value);
+    if (packet->value == (uint32_t)&wifiCb) { 
+        if (_debugEn) _debug->println("SYNC!");
+        return true;
+    }
+    if (_debugEn) {
+        _debug->print("BAD: ");
+        _debug->println(packet->value);
+    }
   }
   // doesn't look like we got a real response
   return false;
