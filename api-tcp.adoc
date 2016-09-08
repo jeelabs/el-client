@@ -478,7 +478,6 @@ void setup()
 		Serial.println(packet->value);
 	}
 	Serial.println("");
-
 	// Set up the TCP socket server to wait for a client on port <>,
 	// it just sets-up stuff on the esp-link side and waits until a client sends some data
 	tcpConnNum = tcp.begin(tcpServer, tcpPort, SOCKET_SERVER, tcpCb); // SOCKET_SERVER ==> accept connections
@@ -492,7 +491,6 @@ void setup()
 	}
 	Serial.println(F("EL-TCP ready"));
 }
-
 void loop() {
 	// process any callbacks coming from esp_link
 	esp.Process();
