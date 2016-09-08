@@ -14,20 +14,30 @@ char * const udpServer2 PROGMEM = "192.168.0.255"; // Broadcast to given network
 uint16_t const udpPort PROGMEM = 5000;
 uint16_t const udpPort2 PROGMEM = 7000;
 
+//###########################################################
+// For ARDUINO UNO WIFI with I2C to serial chip!
+//###########################################################
 // Serial port to ESP8266
 #include <SC16IS750.h>
 SC16IS750 i2cuart = SC16IS750(SC16IS750_PROTOCOL_I2C,SC16IS750_ADDRESS_AA);
 
+// Initialize a connection to esp-link using the I2Cuart chip of the Arduino Uno WiFi board for
+// SLIP messages.
+ELClient esp(&i2cuart);
+
+//###########################################################
+// For boards using the hardware serial port!
+//###########################################################
 // Initialize a connection to esp-link using the normal hardware serial port both for
 // SLIP and for debug messages.
-ELClient esp(&i2cuart);
+//ELClient esp(&Serial, &Serial);
 
 // Initialize a UDP client on the connection to esp-link
 ELClientUdp udp(&esp);
 // Initialize a UDP client on the connection to esp-link
 ELClientUdp udp2(&esp);
 
-// Timer value to send out data 
+// Timer value to send out data
 uint32_t wait;
 // Time to wait between sending out data
 uint32_t waitTime;
@@ -66,7 +76,7 @@ char * getErrTxt(int16_t commError) {
 
 // Callback for UDP socket, called if data was sent or received
 // Receives socket client number, can be reused for all initialized UDP socket connections
-// !!! UDP doesn't check if the data was received or if the receiver IP/socket is available !!! You need to implement your own 
+// !!! UDP doesn't check if the data was received or if the receiver IP/socket is available !!! You need to implement your own
 // error control!
 void udpCb(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data) {
 	Serial.println("udpCb is called");
@@ -125,7 +135,7 @@ void setup() {
 	Serial.println(F("EL-Client synced!"));
 
 	// Get immediate wifi status info for demo purposes. This is not normally used because the
-	// wifi status callback registered above gets called immediately. 
+	// wifi status callback registered above gets called immediately.
 	esp.GetWifiStatus();
 	ELClientPacket *packet;
 	if ((packet=esp.WaitReturn()) != NULL) {
@@ -142,7 +152,7 @@ void setup() {
 		delay(10000);
 		asm volatile ("  jmp 0");
 	}
-	
+
 	err = udp2.begin(udpServer2, udpPort2, udpCb);
 	if (err != 0) {
 		Serial.print(F("UDP2 begin failed: "));
@@ -150,7 +160,7 @@ void setup() {
 		delay(10000);
 		asm volatile ("  jmp 0");
 	}
-	
+
 	Serial.println(F("EL-Client ready!"));
 	wait = millis()+29000; // Start first sending in 1 second
 }
@@ -167,7 +177,7 @@ void loop() {
 			Serial.print(F("Sending message to "));
 			Serial.println(udpServer);
 			udp.send("Message from your Arduino Uno WiFi over UDP socket");
-		
+
 			// Send message to the previously set-up server #2
 			Serial.print(F("Sending broadcast to "));
 			Serial.println(udpServer2);
@@ -175,7 +185,7 @@ void loop() {
 		}
 	} else {
 		// This is just for demo, you can as well just try to reconnect
-		// and setup the connection to esp-link again 
+		// and setup the connection to esp-link again
 		Serial.println(F("Lost connection, try to reboot"));
 		delay(10000);
 		asm volatile ("  jmp 0");
