@@ -1,4 +1,13 @@
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
 = API UDP socket client
+
+anchor:bookmark-b[]
 
 == DEFINES
 === Timeout for UDP requests
@@ -71,8 +80,8 @@ void udpCb(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data)
 == FUNCTIONS
 === class ELClientUdp
 ==== Function:
-The ELClientUdp class sends data over a simple UDP socket to a remote server. Each instance is used to communicate with one server and multiple instances can be created to send to multiple servers.
-The ELClientUdp class does not support concurrent requests to the same server because only a single response can be recevied at a time and the responses of the two requests may arrive out of order.
+ The ELClientUdp class sends data over a simple UDP socket to a remote server. Each instance is used to communicate with one server and multiple instances can be created to send to multiple servers.
+ The ELClientUdp class does not support concurrent requests to the same server because only a single response can be recevied at a time and the responses of the two requests may arrive out of order.
 
 ==== Note:
 
@@ -119,8 +128,7 @@ int begin(const char* host, uint16_t port, void (*userCb)(uint8_t resp_type, uin
 ==== Return:
  int <result>:: 0 if successfull or negative error code
 
-Error codes:
-
+ Error codes:
  -1 Wrong number of arguments (should never happen)
  -2 hostname longer than 128 characters
  -3 out of memory (ESP8266)
@@ -174,7 +182,7 @@ ___
 ___
 === getResponse
 ==== Function:
-Retrieve the response from the remote server, returns the number of send or received bytes, 0 if no response (may need to wait longer)
+ Retrieve the response from the remote server, returns the number of send or received bytes, 0 if no response (may need to wait longer)
 
 ==== Note:
 [CAUTION]
@@ -232,7 +240,7 @@ ___
 ___
 === waitResponse
 ==== Function:
-Wait for the response from the remote server, returns the number of send or received bytes, 0 if no response (may need to wait longer)
+ Wait for the response from the remote server, returns the number of send or received bytes, 0 if no response (may need to wait longer)
 
 ==== Note:
 [CAUTION]
@@ -255,6 +263,7 @@ Received packet is NOT null-terminated
  uint8_t *client_num:: Pointer to connection number. Can be used to distinguish between different UDP clients.
  char* data:: Pointer to buffer for received packet
  uint16_t maxLen:: Size of buffer for received packet. If the received packet is larger than the buffer, the received packet will be truncated.
+ uint32_t timeout:: Timout in milli seconds to wait for a response, defaults to 5000ms
 
 ==== Defaults:
 uint32_t timeout:: Is the default timeout of 5 seconds if not set
@@ -304,7 +313,7 @@ ___
 ___
 === userCb
 ==== Function:
-This function is called by ELClient library when a packet was sent, a packet was received or an error occured
+ This function is called by ELClient library when a packet was sent, a packet was received or an error occured
 
 ==== Note:
 [TIP]

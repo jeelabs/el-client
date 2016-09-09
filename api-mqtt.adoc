@@ -1,0 +1,295 @@
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+= API MQTT client
+
+anchor:bookmark-b[]
+
+== FUNCTIONS
+=== class ELClientMqtt
+==== Function:
+ Class to send and receive MQTT messages. This class should be used with a singleton object because the esp-link implementation currently only supports a single MQTT server, so there is no value in instantiating multiple ELClientMqtt objects (although it's possible). All the server settings are made in esp-link and esp-link takes care to automatically reconnect and retry if the connection is lost. This means that on the arduino side the only code that is necessary is to send and receive messsages.
+==== Note:
+[NOTE]
+MQTT server credentials are setup over the esp-link website!
+
+==== Prototype:
+[source, c]
+ELClientMqtt(ELClient* elc);
+
+==== Parameters:
+ ELClient *elc:: Pointer to ELClient. Check ELClient API documentation.
+
+==== Defaults:
+
+==== Return:
+
+==== Example:
+[source, c++]
+ELClientMqtt mqtt(&esp);
+
+___
+___
+=== setup
+==== Function:
+ Setup transmits the set of callbacks to esp-link. It assumes that the desired callbacks have previously been attached using something like mqtt->connectedCb.attach(myCallbackFun). After setup is called either the connectedCb or the disconnectedCb is invoked to provide information about the initial connection status.
+
+==== Note:
+
+==== Prototype:
+[source, c]
+void setup(void);
+
+==== Parameters:
+
+==== Defaults:
+
+==== Return:
+
+Error codes:
+
+==== Example:
+[source, c++]
+// Set-up callbacks for events and initialize with es-link.
+mqtt.connectedCb.attach(mqttConnected);
+mqtt.disconnectedCb.attach(mqttDisconnected);
+mqtt.publishedCb.attach(mqttPublished);
+mqtt.dataCb.attach(mqttData);
+mqtt.setup();
+
+___
+___
+=== attach event callbacks
+ connectedCb.attach
+ disconnectedCb.attach
+ publishedCb.attach
+ dataCb.attach
+
+==== Function:
+ Attach callback with no args when MQTT is connected
+ Attach callback with no args when MQTT is disconnected
+ Attach callback when a message is received, called with two arguments: the topic and the message (max ~110 bytes for both)
+
+==== Note:
+[TIP]
+The callback function is user specific and therefor included in the program code, not in the library
+
+[CAUTION]
+Callback publishedCb is not implemented yet
+
+==== Prototype:
+[source, c]
+void connectedCb.attach(uint32_t mqttConnected);
+void disconnectedCb.attach(uint32_t mqttDisconnected);
+void publishedCb.attach(uint32_t mqttPublished);
+void dataCb.attach(uint32_t mqttData);
+
+==== Parameters:
+ uint32_t mqttConnected:: Pointer to function to called when connection to MQTT server is established
+ uint32_t mqttDisconnected:: Pointer to function to called when connection to MQTT server is lost
+ uint32_t mqttPublished:: Pointer to function to called when topic is published to MQTT server
+ uint32_t mqttData:: Pointer to function to called when new topic data was received from the MQTT server
+
+==== Defaults:
+
+==== Return:
+
+==== Example:
+[source, c]
+// Callback made from esp-link to notify of wifi status changes
+// Here we just print something out for grins
+void wifiCb(void* response)
+{
+  ELClientResponse *res = (ELClientResponse*)response;
+  if (res->argc() == 1)
+  {
+    uint8_t status;
+    res->popArg(&status, 1);
+    if(status == STATION_GOT_IP)
+    {
+      Serial.println("WIFI CONNECTED");
+    }
+    else
+    {
+      Serial.print("WIFI NOT READY: ");
+      Serial.println(status);
+    }
+  }
+}
+bool connected;
+// Callback when MQTT is connected
+void mqttConnected(void* response)
+{
+  Serial.println("MQTT connected!");
+  mqtt.subscribe("/esp-link/1");
+  mqtt.subscribe("/hello/world/#");
+  connected = true;
+}
+// Callback when MQTT is disconnected
+void mqttDisconnected(void* response)
+{
+  Serial.println("MQTT disconnected");
+  connected = false;
+}
+// Callback when an MQTT message arrives for one of our subscriptions
+void mqttData(void* response)
+{
+  ELClientResponse *res = (ELClientResponse *)response;
+  Serial.print("Received: topic=");
+  String topic = res->popString();
+  Serial.println(topic);
+  Serial.print("data=");
+  String data = res->popString();
+  Serial.println(data);
+}
+void mqttPublished(void* response)
+{
+  Serial.println("MQTT published");
+}
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println("EL-Client starting!");
+  // Sync-up with esp-link, this is required at the start of any sketch and initializes the
+  // callbacks to the wifi status change callback. The callback gets called with the initial
+  // status right after Sync() below completes.
+  esp.wifiCb.attach(wifiCb); // wifi status change callback, optional (delete if not desired)
+  bool ok;
+  do {
+    ok = esp.Sync();      // sync up with esp-link, blocks for up to 2 seconds
+    if (!ok) Serial.println("EL-Client sync failed!");
+  } while(!ok);
+  Serial.println("EL-Client synced!");
+  // Set-up callbacks for events and initialize with es-link.
+  mqtt.connectedCb.attach(mqttConnected);
+  mqtt.disconnectedCb.attach(mqttDisconnected);
+  mqtt.publishedCb.attach(mqttPublished);
+  mqtt.dataCb.attach(mqttData);
+  mqtt.setup();
+  Serial.println("EL-MQTT ready");
+}
+static int count;
+static uint32_t last;
+void loop() {
+  esp.Process();
+  if (connected && (millis()-last) > 4000) {
+    Serial.println("publishing");
+    char buf[12];
+    itoa(count++, buf, 10);
+    mqtt.publish("/esp-link/1", buf);
+    itoa(count+99, buf, 10);
+    mqtt.publish("/hello/world/arduino", buf);
+    uint32_t t = cmd.GetTime();
+    Serial.print("Time: "); Serial.println(t);
+    last = millis();
+  }
+}
+
+___
+___
+=== subscribe
+==== Function:
+ Subscribe to a topic, the default qos is 0. When messages are recevied for the topic the data callback is invoked.
+
+==== Note:
+
+==== Prototype:
+[source, c++]
+void subscribe(const char* topic, uint8_t qos=0);
+void subscribe(const __FlashStringHelper* topic, uint8_t qos=0);
+
+==== Parameters:
+ const char* topic:: Topic name as char*
+ const __FlashStringHelper* topic:: Topic name if saved in program memory
+ uint8_t qos:: Requested qos level
+
+==== Defaults:
+ uint8_t qos:: qos level defaults to 0 if not set
+
+==== Return:
+
+==== Example:
+[source, c++]
+mqtt.subscribe("/esp-link/1");
+mqtt.subscribe("/hello/world/#");
+
+___
+___
+=== publish
+==== Function:
+ Publish a message to a topic. At the moment only qos 0 is implemented
+
+==== Note:
+[CAUTION]
+MQTT client on ESP8266 only supports qos 0 topic publishing
+
+==== Prototype:
+[source, c++]
+ void publish(const char* topic, const uint8_t* data, const uint16_t len, uint8_t qos=0, uint8_t retain=0);
+ void publish(const char* topic, const char* data, uint8_t qos=0, uint8_t retain=0);
+ void publish(const __FlashStringHelper* topic, const __FlashStringHelper* data, const uint16_t len, uint8_t qos=0, uint8_t retain=0);
+ void publish(const char* topic, const __FlashStringHelper* data, const uint16_t len, uint8_t qos=0, uint8_t retain=0);
+ void publish(const __FlashStringHelper* topic, const uint8_t* data, const uint16_t len, uint8_t qos=0, uint8_t retain=0);
+
+==== Parameters:
+ const char* topic:: Topic name as char*
+ const __FlashStringHelper* topic:: Topic name if saved in program memory
+ const uint8_t* data:: Pointer to topic data/message as char *
+ const char* data:: Pointer to topic data/message as uint8_t :
+ const __FlashStringHelper* data:: Pointer to topic data/message if saved in program memory
+ const uint16_t len:: Length of data
+ uint8_t qos:: Requested qos level
+ uint8_t retain:: Requested retain level
+
+==== Defaults:
+ uint8_t qos:: Default level is 0 if not set
+ uint8_t retain:: Default level is 0 if not set
+
+==== Return:
+
+==== Example:
+[source, c++]
+char buf[12];
+itoa(count++, buf, 10);
+mqtt.publish("/esp-link/1", buf);
+itoa(count+99, buf, 10);
+mqtt.publish("/hello/world/arduino", buf);
+
+___
+___
+=== lwt
+==== Function:
+ Set a last-will topic & message
+
+==== Note:
+[CAUTION]
+MQTT client on ESP8266 only supports qos 0 topic publishing
+
+==== Prototype:
+[source, c++]
+void lwt(const char* topic, const char* message, uint8_t qos=0, uint8_t retain=0);
+void lwt(const __FlashStringHelper* topic, const __FlashStringHelper* message, uint8_t qos=0, uint8_t retain=0);
+
+==== Parameters:
+const char* topic:: Topic name as char*
+const __FlashStringHelper* topic:: Topic name if saved in program memory
+const char* message:: Pointer to topic message as uint8_t :
+const __FlashStringHelper* message:: Pointer to topic message if saved in program memory
+uint8_t qos:: Requested qos level
+uint8_t retain:: Requested retain level
+
+==== Defaults:
+
+==== Return:
+
+==== Example:
+[source, c++]
+Serial.println("ARDUINO: setup mqtt lwt");
+mqtt.lwt("/lwt", "offline", 0, 0); //or mqtt.lwt("/lwt", "offline");
+
+___
+___

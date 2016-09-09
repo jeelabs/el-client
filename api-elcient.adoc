@@ -1,0 +1,369 @@
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+= API ELClient
+
+anchor:bookmark-b[]
+
+== DEFINES
+=== Timeout for requests
+==== Function:
+ Default timeout for requests
+
+==== Note:
+[NOTE]
+Fixed value. To change ELClient.h must be changed
+
+==== Prototype:
+[source, c]
+#define ESP_TIMEOUT 2000
+
+==== Parameters:
+==== Defaults:
+ 2000ms
+
+==== Return:
+==== Example:
+
+___
+___
+=== WiFi status
+==== Function:
+ Status of WiFi connection
+
+==== Note:
+[NOTE]
+Fixed value. To change ELClient.h must be changed
+
+==== Prototype:
+[source, c]
+STATION_IDLE = 0
+STATION_CONNECTING = 1
+STATION_WRONG_PASSWORD = 2
+STATION_NO_AP_FOUND = 3
+STATION_CONNECT_FAIL = 4
+STATION_GOT_IP = 5
+
+==== Parameters:
+==== Defaults:
+==== Return:
+==== Example:
+
+___
+___
+=== Commands
+==== Function:
+ Available commands (== functions)
+
+==== Note:
+[NOTE]
+Fixed value. To change ELClient.h must be changed
+
+==== Prototype:
+[source, c]
+CMD_NULL = 0       -> null, mainly to prevent 0 from doing something bad
+CMD_SYNC = 1            -> synchronize, starts the protocol
+CMD_RESP_V = 2          -> response with a value
+CMD_RESP_CB = 3         -> response with a callback
+CMD_WIFI_STATUS = 4     -> get the wifi status
+CMD_CB_ADD = 5          -> add a custom callback
+CMD_CB_EVENTS = 6       -> ???
+CMD_GET_TIME = 7        -> get current time in seconds
+CMD_MQTT_SETUP = 10     -> initialize MQTT
+CMD_MQTT_PUBLISH = 11   -> publish MQTT topic
+CMD_MQTT_SUBSCRIBE = 12 -> subscribe to MQTT topic
+CMD_MQTT_LWT = 13       -> set last will
+CMD_REST_SETUP = 20     -> initialize REST
+CMD_REST_REQUEST = 21   -> send REST request
+CMD_REST_SETHEADER = 22 -> set REST request header
+CMD_TCP_SETUP = 30      -> initialize TCP socket
+CMD_TCP_SEND = 31       -> send packet over TCP socket
+CMD_UDP_SETUP = 40      -> initialize UDP socket
+CMD_UDP_SEND = 41       -> send packet over UDP socket
+
+==== Parameters:
+==== Defaults:
+==== Return:
+==== Example:
+
+== FUNCTIONS
+=== class ELClient
+==== Function:
+ Class to create an esp-link client based on a stream and with or without a specified debug output stream.
+
+==== Note:
+[CAUTION]
+V2.2.3 of this library crashes on certain functions if the serial stream for debug is not set!
+
+==== Prototype:
+[source, c]
+ELClient(Stream* serial, Stream* debug);
+ELClient(Stream* serial);
+
+==== Parameters:
+ Stream* serial:: Serial stream for communication with ESP8266
+ Stream* debug:: Serial stream for debug output of this library
+
+==== Defaults:
+
+==== Return:
+
+==== Example:
+[source, c++]
+/*###########################################################*/
+/* For boards using the hardware serial port! */
+/*###########################################################*/
+/* Initialize a connection to esp-link using the normal hardware serial port both for SLIP and for debug messages. */
+ELClient esp(&Serial, &Serial);
+
+[source, c++]
+/*###########################################################*/
+/* For ARDUINO UNO WIFI board with I2C to serial chip connected to the ESP8266! */
+/*###########################################################*/
+/* Serial port to ESP8266 */
+#include <SC16IS750.h>
+SC16IS750 i2cuart = SC16IS750(SC16IS750_PROTOCOL_I2C,SC16IS750_ADDRESS_AA);
+/* Initialize a connection to esp-link using the I2Cuart chip of the Arduino Uno WiFi board for SLIP messages. */
+ELClient esp(&i2cuart);
+
+___
+___
+=== Request
+==== Function:
+ Start a request to the ESP8266. cmd is the command to execute, value is either the address of a function to call with a response or a first argument to the command if there is no CB. argc is the number of additional arguments
+ Calling with (uint16_t cmd,... starts to build up a Request
+ Calling with (const void* data,... adds a data block to the Request
+ Calling without arguments finish the request and sends it to the ESP8266
+
+==== Note:
+[NOTE]
+This function is usually not needed for applications. The communication to the ESP8266 is handled by the cmd, rest, mqtt, tcp and udp library parts.
+
+[CAUTION]
+TCP and UDP functions are not implemented in version V2.2.3 of the library
+
+==== Prototype:
+[source, c]
+void Request(uint16_t cmd, uint32_t value, uint16_t argc); // Start a request.
+void Request(const void* data, uint16_t len); // Add a data block
+void Request(const __FlashStringHelper* data, uint16_t len); // Add a data block from flash
+void Request(void); // Finish a request
+
+==== Parameters:
+uint16_t cmd:: Command to be sent to the ESP8266, defined in ELClient.h
+uint32_t value:: Address of a callback function or first argument
+uint16_t argc:: Number of arguments
+const void* data:: Pointer to a data block argument
+const __FlashStringHelper* data:: Pointer to a data block argument from Flash
+uint16_t len:: Length of data block
+
+==== Defaults:
+
+==== Return:
+
+==== Example:
+[source, c++]
+_elc->Request(CMD_MQTT_LWT, 0, 4);
+_elc->Request(topic, strlen(topic));
+_elc->Request(message, strlen(message));
+_elc->Request(&qos, 1);
+_elc->Request(&retain, 1);
+_elc->Request();
+
+___
+___
+=== Process
+
+==== Function:
+ Process the input stream, call this in loop() to dispatch call-back based responses. Callbacks are invoked with an ElClientResponse pointer as argument. Returns the ELClientPacket if a non-callback response was received, typically this is used to create an ELClientResponse. Returns NULL if no response needs to be processed.
+
+==== Note:
+
+==== Prototype:
+[source, c]
+ELClientPacket *Process(void);
+
+==== Parameters:
+
+==== Defaults:
+
+==== Return:
+ ELClientPacket <elcPacket>:: ELClientPacket with response from ESP8266 or 0 if no packet was received
+
+==== Example:
+[source, c]
+void loop()
+{
+  ELClientPacket *packet;
+  // process any callbacks coming from esp_link
+  packet = esp.Process();
+  if (packet != 0)
+  {
+    /* process the received package */
+  }
+}
+
+___
+___
+=== WaitReturn
+==== Function:
+ Busy wait for a response with a timeout in milliseconds, returns an ELClientPacket if a response was recv'd and NULL otherwise. The ELClientPacket is typically used to create an ELClientResponse.
+
+==== Note:
+[CAUTION]
+Blocks the Arduino code for 2000ms (or the defined timeout). Use with caution and not within the loop() function!
+
+==== Prototype:
+[source, c++]
+ELClientPacket *WaitReturn(uint32_t timeout=ESP_TIMEOUT);
+
+==== Parameters:
+ uint32_t timeout:: Timeout to wait for a response in milliseconds
+
+==== Defaults:
+ uint32_t timeout:: Default is 2000ms if not set
+
+==== Return:
+ELClientPacket <elcPacket>:: ELClientPacket with response from ESP8266 or 0 if no packet was received
+
+==== Example:
+[source, c++]
+/* Get immediate wifi status info. */
+esp.GetWifiStatus();
+ELClientPacket *packet;
+if ((packet=esp.WaitReturn()) != NULL) {
+  Serial.print("Wifi status: ");
+  Serial.println(packet->value);
+}
+
+___
+___
+=== Sync
+==== Function:
+ Initialize and synchronize communication with esp-link with a timeout in milliseconds, and remove all existing callbacks. Registers the wifiCb and returns true on success
+
+==== Note:
+[CAUTION]
+Blocks the Arduino code for 2000ms (or the defined timeout). Use with caution and not within the loop() function!
+
+[WARNING]
+Callback for wifiCb must be attached before calling Sync
+
+==== Prototype:
+[source, c++]
+ boolean Sync(uint32_t timeout=ESP_TIMEOUT);
+
+==== Parameters:
+  uint32_t timeout:: Timeout to wait for a response in milliseconds
+
+==== Defaults:
+  uint32_t timeout:: Default is 2000ms if not set
+
+==== Return:
+
+==== Example:
+[source, c++]
+/* Sync-up with esp-link, this is required at the start of any sketch and initializes the callbacks to the wifi status change callback. The callback gets called with the initial status right after Sync() below completes. */
+esp.wifiCb.attach(wifiCb); // wifi status change callback, optional (delete if not desired)
+bool ok;
+do
+{
+  ok = esp.Sync();      // sync up with esp-link, blocks for up to 2 seconds
+  if (!ok) Serial.println("EL-Client sync failed!");
+} while(!ok);
+Serial.println("EL-Client synced!");
+
+___
+___
+=== GetWifiStatus
+==== Function:
+ Request the wifi status
+
+==== Note:
+
+==== Prototype:
+[source, c++]
+void GetWifiStatus(void);
+
+==== Parameters:
+
+==== Defaults:
+
+==== Return:
+
+==== Example:
+[source, c++]
+/* Get immediate wifi status info. */
+esp.GetWifiStatus();
+ELClientPacket *packet;
+if ((packet=esp.WaitReturn()) != NULL) {
+  Serial.print("Wifi status: ");
+  Serial.println(packet->value);
+}
+
+___
+___
+=== attach WiFi event callback
+ wifiCb.attach
+
+==== Function:
+ Attach callback function for wifi status changes
+
+==== Note:
+[TIP]
+The callback function is user specific and therefor included in the program code, not in the library
+
+==== Prototype:
+[source, c]
+void wifiCb.attach(wifiCb);
+
+==== Parameters:
+ uint32_t wifiCb:: Pointer to function to called on wifi events
+
+==== Defaults:
+
+==== Return:
+
+==== Example:
+[source, c]
+/* Callback made from esp-link to notify of wifi status changes. Here we just print something out for grins */
+void wifiCb(void* response)
+{
+  ELClientResponse *res = (ELClientResponse*)response;
+  if (res->argc() == 1)
+  {
+    uint8_t status;
+    res->popArg(&status, 1);
+    if(status == STATION_GOT_IP)
+    {
+      Serial.println("WIFI CONNECTED");
+    }
+    else
+    {
+      Serial.print("WIFI NOT READY: ");
+      Serial.println(status);
+    }
+  }
+}
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println("EL-Client starting!");
+  // Sync-up with esp-link, this is required at the start of any sketch and initializes the
+  // callbacks to the wifi status change callback. The callback gets called with the initial
+  // status right after Sync() below completes.
+  esp.wifiCb.attach(wifiCb); // wifi status change callback, optional (delete if not desired)
+  bool ok;
+  do {
+    ok = esp.Sync();      // sync up with esp-link, blocks for up to 2 seconds
+    if (!ok) Serial.println("EL-Client sync failed!");
+  } while(!ok);
+  Serial.println("EL-Client synced!");
+}
+
+___
+___
