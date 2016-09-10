@@ -95,14 +95,16 @@ void setup() {
 }
 
 float solarValue = 99.5;
+// Change to your own Thingspeak API key
 char *api_key = "K9LDRXS7BXSN8X1J";
+// expand buffer size to your needs
 #define BUFLEN 266
 
 void loop() {
 	// process any callbacks coming from esp_link
 	esp.Process();
 
-	// if we're connected make an HTTP request
+	// if we're connected make an REST request
 	if(wifiConnected) {
 		
 		// Generate a fake value starting from 100 going up to 300
