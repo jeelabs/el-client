@@ -141,7 +141,7 @@ public:
 
     /** Add a callback function to the class
      *  @param item - Address of the initialized class
-     *  @param member - Address of the member function (dont forget the scope that the function is defined in)
+     *  @param method - Address of the member function (dont forget the scope that the function is defined in)
      */
     template<class T>
     void attach(T *item, retT (T::*method)(argT))

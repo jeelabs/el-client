@@ -1,3 +1,7 @@
+/*! \file ELClient.h
+    \brief Definitions for ELClient
+*/
+
 #ifndef _EL_CLIENT_H_
 #define _EL_CLIENT_H_
 
@@ -7,52 +11,52 @@
 #include "ELClientResponse.h"
 #include "FP.h"
 
-#define ESP_TIMEOUT 2000
+#define ESP_TIMEOUT 2000 /**< Default timeout for TCP requests when waiting for a response */
 
 // Enumeration of commands supported by esp-link, this needs to match the definition in
 // esp-link!
 typedef enum {
-  CMD_NULL = 0,     // null, mainly to prevent 0 from doing something bad
-  CMD_SYNC,         // synchronize, starts the protocol
-  CMD_RESP_V,       // response with a value
-  CMD_RESP_CB,      // response with a callback
-  CMD_WIFI_STATUS,  // get the wifi status
-  CMD_CB_ADD,       // add a custom callback
-  CMD_CB_EVENTS,    // ???
-  CMD_GET_TIME,     // get current time in seconds since the unix epoch
+  CMD_NULL = 0,     /**< null, mainly to prevent 0 from doing something bad */
+  CMD_SYNC,         /**< Synchronize, starts the protocol */
+  CMD_RESP_V,       /**< Response with a value */
+  CMD_RESP_CB,      /**< Response with a callback */
+  CMD_WIFI_STATUS,  /**< Get the wifi status */
+  CMD_CB_ADD,       /**< Add a custom callback */
+  CMD_CB_EVENTS,    /**< ??? */
+  CMD_GET_TIME,     /**< Get current time in seconds since the unix epoch */
   //CMD_GET_INFO,
 
-  CMD_MQTT_SETUP = 10,
-  CMD_MQTT_PUBLISH,
-  CMD_MQTT_SUBSCRIBE,
-  CMD_MQTT_LWT,
+  CMD_MQTT_SETUP = 10, /**< Register callback functions */
+  CMD_MQTT_PUBLISH,    /**< Publish MQTT topic */
+  CMD_MQTT_SUBSCRIBE,  /**< Subscribe to MQTT topic */
+  CMD_MQTT_LWT,        /**< Define MQTT last will */
 
-  CMD_REST_SETUP = 20,
-  CMD_REST_REQUEST,
-  CMD_REST_SETHEADER,
+  CMD_REST_SETUP = 20, /**< Setup REST connection */
+  CMD_REST_REQUEST,    /**< Make request to REST server */
+  CMD_REST_SETHEADER,  /**< Define HTML header */
 
-  CMD_TCP_SETUP = 30,
-  CMD_TCP_SEND,
+  CMD_TCP_SETUP = 30,  /**< Setup TCP socket connection */
+  CMD_TCP_SEND,        /**< Send TCP packet */
 
-  CMD_UDP_SETUP = 40,
-  CMD_UDP_SEND,
-} CmdName;
+  CMD_UDP_SETUP = 40,  /**< Setup UDP socket connection */
+  CMD_UDP_SEND,        /**< Send UDP packet */
+} CmdName; /**< Enumeration of commands supported by esp-link, this needs to match the definition in esp-link! */
 
 enum WIFI_STATUS {
-  STATION_IDLE = 0,
-  STATION_CONNECTING,
-  STATION_WRONG_PASSWORD,
-  STATION_NO_AP_FOUND,
-  STATION_CONNECT_FAIL,
-  STATION_GOT_IP
-};
+  STATION_IDLE = 0,        /**< Idle status */
+  STATION_CONNECTING,      /**< Trying to connect */
+  STATION_WRONG_PASSWORD,  /**< Connection error, wrong password */
+  STATION_NO_AP_FOUND,     /**< Connection error, AP not found */
+  STATION_CONNECT_FAIL,    /**< Connection error, connection failed */
+  STATION_GOT_IP           /**< Connected, received IP */
+}; /**< Enumeration of possible WiFi status */
 
 typedef struct {
   uint8_t* buf;
   uint16_t bufSize;
   uint16_t dataLen;
   uint8_t isEsc;
-} ELClientProtocol;
+} ELClientProtocol; /**< Protocol structure  */
 
 class ELClient {
   public:
@@ -61,7 +65,7 @@ class ELClient {
     // Create an esp-link client based on a stream with no debug output
     ELClient(Stream* serial);
 
-    Stream* _debug;
+    Stream* _debug; /**< Data stream for debug use */
 
     //== Requests
     // Start a request. cmd is the command to execute, value is either the address of a function
@@ -94,14 +98,14 @@ class ELClient {
     void GetWifiStatus(void);
 
     // Callback for wifi status changes that must be attached before calling Sync
-    FP<void, void*> wifiCb;
+    FP<void, void*> wifiCb; /**< Pointer to external callback function */
 
   //private:
-    Stream* _serial;
-    boolean _debugEn;
-    uint16_t crc;
-    ELClientProtocol _proto;
-    uint8_t _protoBuf[128];
+    Stream* _serial; /**< Serial stream for communication with ESP */
+    boolean _debugEn; /**< Flag for debug - True = enabled, False = disabled */
+    uint16_t crc; /**< CRC checksum */
+    ELClientProtocol _proto; /**< Protocol structure */
+    uint8_t _protoBuf[128]; /**< Protocol buffer */
 
     void init();
     void DBG(const char* info);

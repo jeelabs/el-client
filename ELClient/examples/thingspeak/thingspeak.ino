@@ -82,7 +82,7 @@ void setup() {
 	}
 	Serial.println("");
 
-	// Set up the REST client to talk to www.timeapi.org, this doesn't connect to that server,
+	// Set up the REST client to talk to api.thingspeak.com, this doesn't connect to that server,
 	// it just sets-up stuff on the esp-link side
 	// int err = rest.begin("api.thingspeak.com");
 	int err = rest.begin("184.106.153.149");
