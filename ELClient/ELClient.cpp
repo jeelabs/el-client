@@ -102,7 +102,7 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
 		packet = esp.Process();
 		if (packet != 0)
 		{
-			/* process the received package */
+			// process the received package //
 		}
 	}
 @endcode

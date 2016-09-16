@@ -5,14 +5,14 @@
  */
 
 #include <ELClient.h>
-#include <ELClientTcp.h>
+#include <ELClientSocket.h>
 
 // IP address for this demo is a local IP.
 // Replace it with the IP address where you have a TCP socket server running
-char * const tcpServer PROGMEM = "192.168.0.121";
+char * const tcpServer PROGMEM = "192.168.0.102";
 // Port for this demo is the port used by the TCP socket server.
 // Replace it with the port that your TCP socket server is listening to
-uint16_t const tcpPort PROGMEM = 9999;
+uint16_t const tcpPort PROGMEM = 7001;
 
 //###########################################################
 // For ARDUINO UNO WIFI with I2C to serial chip!
@@ -33,7 +33,7 @@ ELClient esp(&i2cuart);
 //ELClient esp(&Serial, &Serial);
 
 // Initialize a TCP socket client on the connection to esp-link
-ELClientTcp tcp(&esp);
+ELClientSocket tcp(&esp);
 // Connection number for tcp
 int tcpConnNum;
 
@@ -154,7 +154,7 @@ void setup() {
 
 	// Set up the TCP socket client for a connection to <tcpServer> on port <>, this doesn't connect to that server,
 	// it just sets-up stuff on the esp-link side and waits until we send some data
-	tcpConnNum = tcp.begin(tcpServer, tcpPort, SOCKET_CLIENT, tcpCb); // SOCKET_CLIENT ==> we don't expect a response
+	tcpConnNum = tcp.begin(tcpServer, tcpPort, SOCKET_TCP_CLIENT, tcpCb); // SOCKET_CLIENT ==> we don't expect a response
 	if (tcpConnNum < 0) {
 		Serial.println(F("TCP socket setup failed, try again in 10 seconds after reboot"));
 		delay(10000);
@@ -181,7 +181,7 @@ void loop() {
 			Serial.print(tcpServer);
 			Serial.print(":");
 			Serial.println(tcpPort);
-			tcp.send("Message from Uno WiFi over TCP socket");
+			tcp.send("Message from Arduino Uno WiFi over TCP");
 		}
 	} else {
 		// This is just for demo, you can as well just try to reconnect

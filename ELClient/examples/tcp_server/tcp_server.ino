@@ -5,7 +5,7 @@
  */
 
 #include <ELClient.h>
-#include <ELClientTcp.h>
+#include <ELClientSocket.h>
 
 // IP address for this demo is a local IP.
 // Replace it with the IP address where you have a TCP socket server running
@@ -33,7 +33,7 @@ ELClient esp(&i2cuart);
 //ELClient esp(&Serial, &Serial);
 
 // Initialize a TCP socket client on the connection to esp-link
-ELClientTcp tcp(&esp);
+ELClientSocket tcp(&esp);
 // Connection number for tcp
 int tcpConnNum;
 
@@ -162,7 +162,7 @@ void setup() {
 
 	// Set up the TCP socket server to wait for a client on port <>,
 	// it just sets-up stuff on the esp-link side and waits until a client sends some data
-	tcpConnNum = tcp.begin(tcpServer, tcpPort, SOCKET_SERVER, tcpCb); // SOCKET_SERVER ==> accept connections
+	tcpConnNum = tcp.begin(tcpServer, tcpPort, SOCKET_TCP_SERVER, tcpCb); // SOCKET_SERVER ==> accept connections
 	if (tcpConnNum < 0) {
 		Serial.println(F("TCP socket setup failed, try again in 10 seconds after reboot"));
 		delay(10000);

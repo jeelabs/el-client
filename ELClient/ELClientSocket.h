@@ -1,5 +1,5 @@
-/*! \file ELClientTcp.h
-	\brief Definitions for ELClientTcp
+/*! \file ELClientSocket.h
+	\brief Definitions for ELClientSocket
 	\author BeeGee
 	\version 1.0
 	\date 2016
@@ -7,43 +7,44 @@
 	\warning Needs ESP-LINK V2.4
 */
 
-#ifndef _EL_CLIENT_TCP_H_
-#define _EL_CLIENT_TCP_H_
+#ifndef _EL_CLIENT_SOCKET_H_
+#define _EL_CLIENT_SOCKET_H_
 
 #include <Arduino.h>
 #include "FP.h"
 #include "ELClient.h"
 
-#define DEFAULT_TCP_TIMEOUT	5000 /**< Default timeout for TCP requests when waiting for a response */
+#define DEFAULT_SOCKET_TIMEOUT	5000 /**< Default timeout for SOCKET requests when waiting for a response */
 
-#define USERCB_SENT 0 /**< Type of callback from ELClient. TCP packet has been sent */
-#define USERCB_RECV 1 /**< Type of callback from ELClient. TCP packet has been received */
-#define USERCB_RECO 2 /**< Type of callback from ELClient. TCP connection error */
-#define USERCB_CONN 3 /**< Type of callback from ELClient. TCP socket connected or disconnected */
+#define USERCB_SENT 0 /**< Type of callback from ELClient. SOCKET packet has been sent */
+#define USERCB_RECV 1 /**< Type of callback from ELClient. SOCKET packet has been received */
+#define USERCB_RECO 2 /**< Type of callback from ELClient. SOCKET connection error */
+#define USERCB_CONN 3 /**< Type of callback from ELClient. SOCKET socket connected or disconnected */
 
 // Socket mode definitions
-#define SOCKET_CLIENT 0 /**< TCP socket client for sending only, doesn't wait for response from server */
-#define SOCKET_CLIENT_LISTEN 1 /**< TCP socket client, waits for response from server after sending */
-#define SOCKET_SERVER 2 /**< TCP socket server */
-
+#define SOCKET_TCP_CLIENT 0 /**< TCP socket client for sending only, doesn't wait for response from server */
+#define SOCKET_TCP_CLIENT_LISTEN 1 /**< TCP socket client, waits for response from server after sending */
+#define SOCKET_TCP_SERVER 2 /**< TCP socket server */
+#define SOCKET_UDP 3 /**< UDP socket for sending and receiving UDP packets */
+	
 // Enable/disable debug output. If defined enables the debug output on Serial port
 //#define DEBUG_EN /**< Enable/disable debug output */
 
-// The ELClientTcp class sends data over a simple TCP socket to a remote server. Each instance
+// The ELClientSocket class sends data over a simple Socket connection to a remote server. Each instance
 // is used to communicate with one server and multiple instances can be created to send
 // to multiple servers.
-// The ELClientTcp class does not support concurrent requests to the same server because
+// The ELClientSocket class does not support concurrent requests to the same server because
 // only a single response can be recevied at a time and the responses of the two requests
 // may arrive out of order.
-// A major limitation of the TCP class is that it does not wait for the response data. 
-class ELClientTcp {
+// A major limitation of the Socket class is that it does not wait for the response data. 
+class ELClientSocket {
 	public:
-		ELClientTcp(ELClient *e);
+		ELClientSocket(ELClient *e);
 
 		// Initialize communication to a remote server, this communicates with esp-link but does not
 		// open a connection to the remote server. Host may be a hostname or an IP address.
 		// Port needs to be defined different from usual HTTP/HTTPS/FTP/SSH ports
-		// sock_mode defines whether the TCP socket act as a client (with or without receiver) or as a server
+		// sock_mode defines whether the socket act as a client (with or without receiver) or as a server
 		// Returns 0 if the set-up is
 		// successful, returns a negative error code if it failed.
 		// Optional a pointer to a callback function be added. The callback function will be called after data is sent out, 
@@ -58,19 +59,21 @@ class ELClientTcp {
 
 		// Retrieve the response from the remote server, returns the number of send or received bytes, 0 if no
 		// response (may need to wait longer)
+		// !!! UDP doesn't check if the data was received or if the receiver IP/socket is available !!! You need to implement your own
+		// error control!
 		uint16_t getResponse(uint8_t *resp_type, uint8_t *client_num, char* data, uint16_t maxLen);
 
 		// Wait for the response from the remote server, returns the length of received data or 0 if no
 		// response (timeout occurred)
 		// Blocks the Arduino code for 5 seconds! not recommended to use. See code examples how to use the callback function instead
-		uint16_t waitResponse(uint8_t *resp_type, uint8_t *client_num, char* data, uint16_t maxLen, uint32_t timeout=DEFAULT_TCP_TIMEOUT);
+		uint16_t waitResponse(uint8_t *resp_type, uint8_t *client_num, char* data, uint16_t maxLen, uint32_t timeout=DEFAULT_SOCKET_TIMEOUT);
 
 		int32_t remote_instance; /**< Connection number, value can be 0 to 3 */
 
 	private:
 		ELClient *_elc; /**< ELClient instance */
-		void tcpCallback(void* resp);
-		FP<void, void*> tcpCb; /**< Pointer to external callback function */
+		void socketCallback(void* resp);
+		FP<void, void*> socketCb; /**< Pointer to external callback function */
 
 		/*! void (* _userCallback)(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data)
 		@brief Callback function when data is sent or received
@@ -89,9 +92,9 @@ class ELClientTcp {
 			The function is user specific and therefor included in the program code, not in the library
 		@par Example
 		@code
-			void tcpCb(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data)
+			void socketCb(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data)
 			{
-				Serial.println("tcpCb connection #"+String(client_num));
+				Serial.println("socketCb connection #"+String(client_num));
 				if (resp_type == USERCB_SENT)
 				{
 					Serial.println("\tSent " + String(len) + " bytes over client#" + String(client_num));
@@ -109,7 +112,7 @@ class ELClientTcp {
 					memcpy(&respData[10], recvData, len); // Copy received data into the buffer
 					respData[len+10] = '\0';
 					Serial.println("\tSend response: " + String(respData));
-					tcp.send(respData);
+					socket.send(respData);
 				}
 				else if (resp_type == USERCB_RECO)
 				{
@@ -134,7 +137,7 @@ class ELClientTcp {
 		@endcode
 		*/
 		typedef void (* _userCallback)(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data);
-		_userCallback _userCb;
+		_userCallback _userCb; /**< Pointer to internal callback function */
 
 		bool _hasUserCb = false; /**< Flag for user callback, true if user callback has been set */
 		int16_t _status; /**< Connection status */
@@ -143,4 +146,4 @@ class ELClientTcp {
 		uint8_t _resp_type; /**< Response type: 0 = send, 1 = receive; 2 = reset connection, 3 = connection */
 		uint8_t _client_num; /**< Connection number, value can be 0 to 3 */
 };
-#endif // _EL_CLIENT_TCP_H_
+#endif // _EL_CLIENT_SOCKET_H_

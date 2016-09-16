@@ -1,6 +1,6 @@
 {
   "name": "ELClient",
-  "keywords": "wifi, mqtt, rest",
+  "keywords": "wifi, mqtt, rest, socket",
   "description": "Wifi library (Chip ESP8266 Wifi SoC) using SLIP protocol via Serial port",
   "url": "https://github.com/jeelabs/esp-link",
   "repository":

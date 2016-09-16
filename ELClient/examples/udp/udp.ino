@@ -3,11 +3,11 @@
  */
 
 #include <ELClient.h>
-#include <ELClientUdp.h>
+#include <ELClientSocket.h>
 
 // IP address for this demo is a local IP.
 // Replace it with the IP address where you have a UDP socket server running
-char * const udpServer PROGMEM = "192.168.0.101"; // Send to single ip address
+char * const udpServer PROGMEM = "192.168.0.102"; // Send to single ip address
 char * const udpServer2 PROGMEM = "192.168.0.255"; // Broadcast to given network ip mask
 // Port for this demo is the port used by the UDP socket server.
 // Replace it with the port that your UDP socket server is listening to
@@ -33,9 +33,9 @@ ELClient esp(&i2cuart);
 //ELClient esp(&Serial, &Serial);
 
 // Initialize a UDP client on the connection to esp-link
-ELClientUdp udp(&esp);
+ELClientSocket udp(&esp);
 // Initialize a UDP client on the connection to esp-link
-ELClientUdp udp2(&esp);
+ELClientSocket udp2(&esp);
 
 // Timer value to send out data
 uint32_t wait;
@@ -145,16 +145,16 @@ void setup() {
 
 	// Set up the UDP socket client to send a short message to <udpServer> on port <>, this doesn't connect to that server,
 	// it just sets-up stuff on the esp-link side
-	int err = udp.begin(udpServer, udpPort, udpCb);
-	if (err != 0) {
+	int err = udp.begin(udpServer, udpPort, SOCKET_UDP, udpCb);
+	if (err < 0) {
 		Serial.print(F("UDP begin failed: "));
 		Serial.println(err);
 		delay(10000);
 		asm volatile ("  jmp 0");
 	}
 
-	err = udp2.begin(udpServer2, udpPort2, udpCb);
-	if (err != 0) {
+	err = udp2.begin(udpServer2, udpPort2, SOCKET_UDP, udpCb);
+	if (err < 0) {
 		Serial.print(F("UDP2 begin failed: "));
 		Serial.println(err);
 		delay(10000);
@@ -181,7 +181,7 @@ void loop() {
 			// Send message to the previously set-up server #2
 			Serial.print(F("Sending broadcast to "));
 			Serial.println(udpServer2);
-			udp2.send("Message from your Arduino Uno WiFi over UDP socket");
+			udp2.send("Broadcast from your Arduino Uno WiFi over UDP socket");
 		}
 	} else {
 		// This is just for demo, you can as well just try to reconnect

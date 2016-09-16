@@ -35,11 +35,8 @@ typedef enum {
   CMD_REST_REQUEST,    /**< Make request to REST server */
   CMD_REST_SETHEADER,  /**< Define HTML header */
 
-  CMD_TCP_SETUP = 30,  /**< Setup TCP socket connection */
-  CMD_TCP_SEND,        /**< Send TCP packet */
-
-  CMD_UDP_SETUP = 40,  /**< Setup UDP socket connection */
-  CMD_UDP_SEND,        /**< Send UDP packet */
+  CMD_SOCKET_SETUP = 30,  /**< Setup socket connection */
+  CMD_SOCKET_SEND,        /**< Send socket packet */
 } CmdName; /**< Enumeration of commands supported by esp-link, this needs to match the definition in esp-link! */
 
 enum WIFI_STATUS {
