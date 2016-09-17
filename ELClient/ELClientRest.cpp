@@ -44,8 +44,10 @@ void ELClientRest::restCallback(void *res)
   ELClientResponse *resp = (ELClientResponse *)res;
 
   resp->popArg(&_status, sizeof(_status));
-  _elc->_debug->print("REST code ");
-  _elc->_debug->println(_status);
+  if (_elc->_debugEn) {
+    _elc->_debug->print("REST code ");
+    _elc->_debug->println(_status);
+  }
 
   _len = resp->popArgPtr(&_data);
 }

@@ -9,7 +9,7 @@
 
 // IP address for this demo is a local IP.
 // Replace it with the IP address where you have a TCP socket server running
-char * const tcpServer PROGMEM = "192.168.0.103";
+char * const tcpServer PROGMEM = "192.168.0.102";
 // Port for this demo is the port used by the TCP socket server.
 // Replace it with the port that your TCP socket server is listening to
 uint16_t const tcpPort PROGMEM = 7002;

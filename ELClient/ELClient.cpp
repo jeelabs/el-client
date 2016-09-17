@@ -126,7 +126,7 @@ ELClientPacket *ELClient::Process() {
       }
       if (_proto.dataLen < _proto.bufSize) {
         _proto.buf[_proto.dataLen++] = value;
-      }
+     }
     }
   }
   return NULL;

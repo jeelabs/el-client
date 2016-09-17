@@ -57,9 +57,8 @@ void setup() {
 //###########################################################
 	// i2cuart.begin(9600);
 	
-	Serial.println(F("EL-Client starting!"));
-
-	Serial.println(F("EL-Client starting!"));
+	Serial.println("");
+	Serial.println("EL-Client starting!");
 
 	// Sync-up with esp-link, this is required at the start of any sketch and initializes the
 	// callbacks to the wifi status change callback. The callback gets called with the initial
@@ -68,16 +67,20 @@ void setup() {
 	bool ok;
 	do {
 		ok = esp.Sync();			// sync up with esp-link, blocks for up to 2 seconds
-		if (!ok) Serial.println(F("EL-Client sync failed!"));
+		if (!ok) {
+			Serial.print("\nEL-Client sync failed! err: ");
+			Serial.println(ok);
+		}
 	} while(!ok);
-	Serial.println(F("EL-Client synced!"));
+	Serial.println("EL-Client synced!");
 
 	// Wait for WiFi to be connected. 
+Serial.println("esp.GetWifiStatus()");
 	esp.GetWifiStatus();
 	ELClientPacket *packet;
-	Serial.print(F("Waiting for WiFi "));
+	Serial.println("Waiting for WiFi ");
 	if ((packet=esp.WaitReturn()) != NULL) {
-		Serial.print(F("."));
+		Serial.print(".");
 		Serial.println(packet->value);
 	}
 	Serial.println("");
