@@ -19,6 +19,8 @@ typedef struct PACKED {
   uint8_t  args[0];        /**< Arguments */
 } ELClientPacket; /**< Packet structure  */
 
+// ELClientResponse is a parser for responses. The constructor initializes the parser based on
+// a packet and the various pop functions consume one response argument at a time.
 class ELClientResponse {
   public:
     // Create a response from a packet, this is done internally in ELClient

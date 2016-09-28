@@ -8,8 +8,8 @@
 
 #include "ELClient.h"
 
-#define SLIP_END  0300        /**< Indicates end of packet */
-#define SLIP_ESC  0333        /**< Indicates byte stuffing */
+#define SLIP_END      0300    /**< Indicates end of packet */
+#define SLIP_ESC      0333    /**< Indicates byte stuffing */
 #define SLIP_ESC_END  0334    /**< ESC ESC_END means END data byte */
 #define SLIP_ESC_ESC  0335    /**< ESC ESC_ESC means ESC data byte */
 
@@ -58,14 +58,15 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
   }
 
   // dispatch based on command
-  if (packet->cmd == CMD_RESP_V) {
+  switch (packet->cmd) {
+  case CMD_RESP_V: // response with a value: return the packet
     // value response
     if (_debugEn) {
         _debug->print("RESP_V: ");
         _debug->println(packet->value);
     }
     return packet;
-  } else if (packet->cmd == CMD_RESP_CB) {
+  case CMD_RESP_CB: // response callback: perform the callback!
     FP<void, void*> *fp;
     // callback reponse
     if (_debugEn) {
@@ -80,7 +81,11 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
       (*fp)(&resp);
     }
     return NULL;
-  } else {
+  case CMD_SYNC: // esp-link is not in sync, it may have reset, signal up the stack
+    _debug->println("NEED_SYNC!");
+    if (resetCb != NULL) (*resetCb)();
+    return NULL;
+  default:
     // command (NOT IMPLEMENTED)
     if (_debugEn) _debug->println("CMD??");
     return NULL;
@@ -346,7 +351,7 @@ void ELClient::init() {
 @par Example for hardware serial ports
 @code
 	//###########################################################
-	// For boards using the hardware serial port! 
+	// For boards using the hardware serial port!
 	//###########################################################
 	// Initialize a connection to esp-link using the normal hardware serial port for SLIP messages.
 	ELClient esp(&Serial);
@@ -379,7 +384,7 @@ _serial(serial) {
 @par Example for hardware serial ports
 @code
 	//###########################################################
-	// For boards using the hardware serial port! 
+	// For boards using the hardware serial port!
 	//###########################################################
 	// Initialize a connection to esp-link using the normal hardware serial port both for SLIP and for debug messages.
 	ELClient esp(&Serial, &Serial);
@@ -425,7 +430,7 @@ void ELClient::DBG(const char* info) {
 	Received packet or null if timeout occured
 @par Example
 @code
-	// Wait for WiFi to be connected. 
+	// Wait for WiFi to be connected.
 	esp.GetWifiStatus();
 	ELClientPacket *packet;
 	Serial.print("Waiting for WiFi ");
@@ -471,7 +476,7 @@ uint16_t ELClient::crc16Add(unsigned char b, uint16_t acc)
 }
 
 /*! crc16Data(const unsigned char *data, uint16_t len, uint16_t acc)
-@brief Create/add CRC for a data buffer 
+@brief Create/add CRC for a data buffer
 @param data
 	The data buffer which will be CRCed
 @param len
@@ -502,7 +507,7 @@ uint16_t ELClient::crc16Data(const unsigned char *data, uint16_t len, uint16_t a
 	True if synchronization succeeds or False if it fails
 @par Example
 @code
-	// Sync-up with esp-link, this is required at the start of any sketch and initializes the callbacks to the wifi status change callback. The callback gets called with the initial status right after Sync() below completes. 
+	// Sync-up with esp-link, this is required at the start of any sketch and initializes the callbacks to the wifi status change callback. The callback gets called with the initial status right after Sync() below completes.
 	esp.wifiCb.attach(wifiCb); // wifi status change callback, optional (delete if not desired)
 	bool ok;
 	do
@@ -514,14 +519,21 @@ uint16_t ELClient::crc16Data(const unsigned char *data, uint16_t len, uint16_t a
 @endcode
 */
 boolean ELClient::Sync(uint32_t timeout) {
+  // send a SLIP END char to make sure we get a clean start
+  _serial->write(SLIP_END);
   // send sync request
   Request(CMD_SYNC, (uint32_t)&wifiCb, 0);
   Request();
+  // we don't want to get a stale response that we need to sync 'cause that has the effect of
+  // calling us again recursively....
+  void (*rr)() = resetCb;
+  resetCb = NULL;
   // empty the response queue hoping to find the wifiCb address
   ELClientPacket *packet;
   while ((packet = WaitReturn(timeout)) != NULL) {
-    if (packet->value == (uint32_t)&wifiCb) { 
+    if (packet->value == (uint32_t)&wifiCb) {
         if (_debugEn) _debug->println("SYNC!");
+        resetCb = rr;
         return true;
     }
     if (_debugEn) {
@@ -530,6 +542,7 @@ boolean ELClient::Sync(uint32_t timeout) {
     }
   }
   // doesn't look like we got a real response
+  resetCb = rr;
   return false;
 }
 
@@ -537,7 +550,7 @@ boolean ELClient::Sync(uint32_t timeout) {
 @brief Request WiFi status from the ESP
 @par Example
 @code
-	// Wait for WiFi to be connected. 
+	// Wait for WiFi to be connected.
 	esp.GetWifiStatus();
 	ELClientPacket *packet;
 	Serial.print("Waiting for WiFi ");
