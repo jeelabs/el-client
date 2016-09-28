@@ -1,3 +1,9 @@
+/*! \file ELClientMqtt.h
+    \brief Definitions for ELClientMqtt
+    \author B. Runnels
+    \author T. von Eicken
+    \date 2016
+*/
 // Copyright (c) 2016 by B. Runnels and T. von Eicken
 
 #ifndef _EL_CLIENT_MQTT_H_
@@ -25,11 +31,10 @@ class ELClientMqtt {
     void setup(void);
 
     // callbacks that can be attached prior to calling setup
-    FP<void, void*> connectedCb;    // callback with no args when MQTT is connected
-    FP<void, void*> disconnectedCb; // callback with no args when MQTT is disconnected
-    FP<void, void*> publishedCb;    // not yet implemented
-    FP<void, void*> dataCb;         // callback when a message is received, called with two arguments:
-                                    // the topic and the message (max ~110 bytes for both)
+    FP<void, void*> connectedCb;    /**< callback with no args when MQTT is connected */
+    FP<void, void*> disconnectedCb; /**< callback with no args when MQTT is disconnected */
+    FP<void, void*> publishedCb;    /**< not yet implemented */
+    FP<void, void*> dataCb;         /**< callback when a message is received, called with two arguments: the topic and the message (max ~110 bytes for both) */
 
     // subscribe to a topic, the default qos is 0. When messages are recevied for the topic the
     // data callback is invoked.
@@ -54,7 +59,7 @@ class ELClientMqtt {
         uint8_t qos=0, uint8_t retain=0);
 
   private:
-    ELClient* _elc;
+    ELClient* _elc; /**< ELClient instance */
 };
 
 #endif // _EL_CLIENT_MQTT_H_

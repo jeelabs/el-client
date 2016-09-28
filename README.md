@@ -20,6 +20,13 @@ Features
     + Support methods GET, POST, PUT, DELETE
     + setContent type, set header, set User Agent
 
+- UDP socket functionality:
+    + Support sending and receiving UDP socket packets and broadcasting UDP socket packets
+
+- TCP socket functionality:
+    + Support TCP socket clients to send packets to a TCP server
+    + Support TCP socket server to receive packets from TCP socket clients and send back responses
+
 Examples
 ========
 Currently two examples are provided that are known to work and that come with HEX files ready
@@ -28,5 +35,14 @@ to load into an Atmega 328 based arduino:
   This example is in `./ELClient/examples/rest`.
 - An MQTT example that publishes messages to an MQTT server and subscribes so it receives and
   prints its own messages. This example is in `./ELClient/examples/mqtt`.
+- An UDP socket client example to connect to a UDP socket server or broadcast to a local network. This example is in `./ELClient/examples/udp`.
+- A simple TCP socket client example that sends data to a TCP server without waiting for response. This example is in `./ELClient/examples/tcp-client`.
+- A TCP socket client example that sends data to a TCP server and waits for a response. This example is in `./ELClient/examples/tcp-client_resp`.
+- A TCP socket server example that waits for connections from a TCP socket client. This example is in `./ELClient/examples/tcp-server`.
+- A Thingspeak example to use REST POST to send data to thingspeak. This example is in `./ELClient/examples/udp`.
 
-The "thingspeak" and "demo" examples are currently not maintained and therefore won't work as-is.
+The "demo" example are currently not maintained and therefore won't work as-is.
+
+API documentation
+========
+A prelimenary documentation for the library is available on [ELClient API Doc](http://desire.giesecke.tk/docs/el-client/).

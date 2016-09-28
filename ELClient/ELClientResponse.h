@@ -1,3 +1,6 @@
+/*! \file ELClientResponse.h
+    \brief Definitions for ELClientResponse
+*/
 #ifndef _EL_CLIENT_RESPONSE_H_
 #define _EL_CLIENT_RESPONSE_H_
 
@@ -10,11 +13,11 @@
 #include <Arduino.h>
 
 typedef struct PACKED {
-  uint16_t cmd;            // command to execute
-  uint16_t argc;           // number of arguments
-  uint32_t value;          // callback to invoke, NULL if none; or response value
-  uint8_t  args[0];
-} ELClientPacket;
+  uint16_t cmd;            /**< Command to execute */
+  uint16_t argc;           /**< Number of arguments */
+  uint32_t value;          /**< Callback to invoke, NULL if none; or response value */
+  uint8_t  args[0];        /**< Arguments */
+} ELClientPacket; /**< Packet structure  */
 
 class ELClientResponse {
   public:
@@ -23,12 +26,12 @@ class ELClientResponse {
     ELClientResponse(void *packet);
 
     // Accessors to the response fields
-    uint16_t argc() { return _cmd->argc; }
-    uint16_t cmd() { return _cmd->cmd; }
-    uint32_t value() { return _cmd->value; }
+    uint16_t argc() { return _cmd->argc; } /**< Get number of arguments  */
+    uint16_t cmd() { return _cmd->cmd; } /**< Get command  */
+    uint32_t value() { return _cmd->value; } /**< Get returned value  */
 
     // Return the length of the next argument
-    uint16_t argLen() { return *(uint16_t*)_arg_ptr; }
+    uint16_t argLen() { return *(uint16_t*)_arg_ptr; } /**< Get length of argument  */
     // Pop one argument from the response, returns the actual length. Returns -1 if there is
     // no arg left.
     int16_t popArg(void* data, uint16_t maxLen);
@@ -43,9 +46,9 @@ class ELClientResponse {
     void popString(String* data);
 
   private:
-    uint16_t _arg_num;
-    uint8_t* _arg_ptr;
-    ELClientPacket* _cmd;
+    uint16_t _arg_num; /**< Argument number */
+    uint8_t* _arg_ptr; /**< Pointer to argument */
+    ELClientPacket* _cmd; /**< Pointer to packet */
 };
 
 #endif // _EL_CLIENT_RESPONSE_H_

@@ -1,3 +1,7 @@
+/*! \file ELClientCmd.h
+    \brief Definitions for ELClientCmd
+	\note Miscellaneous commands
+*/
 // Miscellaneous commands
 
 #ifndef _EL_CLIENT_CMD_H_
@@ -15,6 +19,6 @@ class ELClientCmd {
     uint32_t GetTime();
 
   private:
-    ELClient* _elc;
+    ELClient* _elc; /**< ELClient instance */
 };
 #endif

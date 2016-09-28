@@ -1,3 +1,9 @@
+/*! \file ELClientRest.h
+    \brief Definitions for ELClientRes
+    \author B. Runnels
+    \author T. von Eicken
+    \date 2016
+*/
 // Copyright (c) 2016 by B. Runnels and T. von Eicken
 
 #ifndef _EL_CLIENT_REST_H_
@@ -8,10 +14,10 @@
 #include "ELClient.h"
 
 // Default timeout for REST requests when waiting for a response
-#define DEFAULT_REST_TIMEOUT  5000
+#define DEFAULT_REST_TIMEOUT  5000 /**< Default timeout for REST requests when waiting for a response */
 
 typedef enum {
-  HTTP_STATUS_OK = 200
+  HTTP_STATUS_OK = 200 /**< HTTP status OK response. */
 } HTTP_STATUS;
 
 // The ELClientRest class makes simple REST requests to a remote server. Each instance
@@ -76,14 +82,14 @@ class ELClientRest {
     void setHeader(const char* value);
 
   private:
-    int32_t remote_instance;
-    ELClient *_elc;
+    int32_t remote_instance; /**< Connection number, value can be 0 to 3 */
+    ELClient *_elc; /**< ELClient instance */
     void restCallback(void* resp);
-    FP<void, void*> restCb;
+    FP<void, void*> restCb; /**< Pointer to external callback function */
 
-    int16_t _status;
-    uint16_t _len;
-    void *_data;
+    int16_t _status; /**< Connection status */
+    uint16_t _len; /**< Number of sent/received bytes */
+    void *_data; /**< Buffer for received data */
 
 
 };
