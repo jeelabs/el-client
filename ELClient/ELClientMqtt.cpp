@@ -14,7 +14,7 @@
 @brief Constructor for ELClientMqtt
 @par Example
 @code
-	ELClientMqtt(ELClient* elc);
+  ELClientMqtt(ELClient* elc);
 @endcode
 */
 ELClientMqtt::ELClientMqtt(ELClient* elc) :_elc(elc) {}
@@ -24,11 +24,11 @@ ELClientMqtt::ELClientMqtt(ELClient* elc) :_elc(elc) {}
 @details Send callback functions for MQTT events to the ESP
 @par Example
 @code
-	mqtt.connectedCb.attach(mqttConnected);
-	mqtt.disconnectedCb.attach(mqttDisconnected);
-	mqtt.publishedCb.attach(mqttPublished);
-	mqtt.dataCb.attach(mqttData);
-	mqtt.setup();
+  mqtt.connectedCb.attach(mqttConnected);
+  mqtt.disconnectedCb.attach(mqttDisconnected);
+  mqtt.publishedCb.attach(mqttPublished);
+  mqtt.dataCb.attach(mqttData);
+  mqtt.setup();
 @endcode
 */
 void ELClientMqtt::setup(void) {
@@ -51,18 +51,18 @@ void ELClientMqtt::setup(void) {
 @brief Set MQTT last will.
 @details Sends the "last will" to the ESP.
 @param topic
-	Last will topic name
+  Last will topic name
 @param message
-	Last will message
+  Last will message
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @param retain
-	(optional) Requested retain level, default 0
+  (optional) Requested retain level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	Serial.println("ARDUINO: setup mqtt lwt");
-	mqtt.lwt("/lwt", "offline", 0, 0); //or mqtt.lwt("/lwt", "offline");
+  Serial.println("ARDUINO: setup mqtt lwt");
+  mqtt.lwt("/lwt", "offline", 0, 0); //or mqtt.lwt("/lwt", "offline");
 @endcode
 */
 void ELClientMqtt::lwt(const char* topic, const char* message, uint8_t qos, uint8_t retain) {
@@ -78,17 +78,17 @@ void ELClientMqtt::lwt(const char* topic, const char* message, uint8_t qos, uint
 @brief Set MQTT last will.
 @details Sends the "last will" to the ESP with the topic and message stored in program memory
 @param topic
-	Last will topic name
+  Last will topic name
 @param message
-	Last will message
+  Last will message
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @param retain
-	(optional) Requested retain level, default 0
+  (optional) Requested retain level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	no example code yet
+  no example code yet
 @endcode
 */
 void ELClientMqtt::lwt(const __FlashStringHelper* topic, const __FlashStringHelper* message,
@@ -108,14 +108,14 @@ void ELClientMqtt::lwt(const __FlashStringHelper* topic, const __FlashStringHelp
 @brief Subscribe to MQTT topic
 @details Sends the MQTT subscription request to the ESP
 @param topic
-	Topic name
+  Topic name
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	mqtt.subscribe("/esp-link/1");
-	mqtt.subscribe("/hello/world/#");
+  mqtt.subscribe("/esp-link/1");
+  mqtt.subscribe("/hello/world/#");
 @endcode
 */
 void ELClientMqtt::subscribe(const char* topic, uint8_t qos) {
@@ -129,13 +129,13 @@ void ELClientMqtt::subscribe(const char* topic, uint8_t qos) {
 @brief Subscribe to MQTT topic
 @details Sends the MQTT subscription request to the ESP with the topic and message stored in program memory
 @param topic
-	Topic name
+  Topic name
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	no example code yet
+  no example code yet
 @endcode
 */
 void ELClientMqtt::subscribe(const __FlashStringHelper* topic, uint8_t qos) {
@@ -151,23 +151,23 @@ void ELClientMqtt::subscribe(const __FlashStringHelper* topic, uint8_t qos) {
 @brief Subscribe to MQTT topic
 @details Sends the MQTT subscription request to the ESP
 @param topic
-	Topic name
+  Topic name
 @param data
-	Pointer to data buffer
+  Pointer to data buffer
 @param len
-	Size of data buffer
+  Size of data buffer
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @param retain
-	(optional) Requested retain level, default 0
+  (optional) Requested retain level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	char buf[12];
-	itoa(count++, buf, 10);
-	mqtt.publish("/esp-link/1", buf);
-	itoa(count+99, buf, 10);
-	mqtt.publish("/hello/world/arduino", buf, 12);
+  char buf[12];
+  itoa(count++, buf, 10);
+  mqtt.publish("/esp-link/1", buf);
+  itoa(count+99, buf, 10);
+  mqtt.publish("/hello/world/arduino", buf, 12);
 @endcode
 */
 void ELClientMqtt::publish(const char* topic, const uint8_t* data, const uint16_t len,
@@ -186,21 +186,21 @@ void ELClientMqtt::publish(const char* topic, const uint8_t* data, const uint16_
 @brief Subscribe to MQTT topic
 @details Sends the MQTT subscription request to the ESP. Data must be null-terminated
 @param topic
-	Topic name
+  Topic name
 @param data
-	Pointer to data buffer
+  Pointer to data buffer
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @param retain
-	(optional) Requested retain level, default 0
+  (optional) Requested retain level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	char buf[12];
-	itoa(count++, buf, 10);
-	mqtt.publish("/esp-link/1", buf);
-	itoa(count+99, buf, 10);
-	mqtt.publish("/hello/world/arduino", buf);
+  char buf[12];
+  itoa(count++, buf, 10);
+  mqtt.publish("/esp-link/1", buf);
+  itoa(count+99, buf, 10);
+  mqtt.publish("/hello/world/arduino", buf);
 @endcode
 */
 void ELClientMqtt::publish(const char* topic, const char* data, uint8_t qos, uint8_t retain)
@@ -212,19 +212,19 @@ void ELClientMqtt::publish(const char* topic, const char* data, uint8_t qos, uin
 @brief Subscribe to MQTT topic
 @details Sends the MQTT subscription request to the ESP with the topic and data stored in program memory
 @param topic
-	Topic name
+  Topic name
 @param data
-	Pointer to data buffer
+  Pointer to data buffer
 @param len
-	Size of data buffer
+  Size of data buffer
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @param retain
-	(optional) Requested retain level, default 0
+  (optional) Requested retain level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	no example code yet
+  no example code yet
 @endcode
 */
 void ELClientMqtt::publish(const __FlashStringHelper* topic, const __FlashStringHelper* data,
@@ -243,19 +243,19 @@ void ELClientMqtt::publish(const __FlashStringHelper* topic, const __FlashString
 @brief Subscribe to MQTT topic
 @details Sends the MQTT subscription request to the ESP with the data stored in program memory
 @param topic
-	Topic name
+  Topic name
 @param data
-	Pointer to data buffer
+  Pointer to data buffer
 @param len
-	Size of data buffer
+  Size of data buffer
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @param retain
-	(optional) Requested retain level, default 0
+  (optional) Requested retain level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	no example code yet
+  no example code yet
 @endcode
 */
 void ELClientMqtt::publish(const char* topic, const __FlashStringHelper* data,
@@ -274,19 +274,19 @@ void ELClientMqtt::publish(const char* topic, const __FlashStringHelper* data,
 @brief Subscribe to MQTT topic
 @details Sends the MQTT subscription request to the ESP with the topic stored in program memory
 @param topic
-	Topic name
+  Topic name
 @param data
-	Pointer to data buffer
+  Pointer to data buffer
 @param len
-	Size of data buffer
+  Size of data buffer
 @param qos
-	(optional) Requested qos level, default 0
+  (optional) Requested qos level, default 0
 @param retain
-	(optional) Requested retain level, default 0
+  (optional) Requested retain level, default 0
 @warning At the moment only qos level 0 is implemented and supported!
 @par Example
 @code
-	no example code yet
+  no example code yet
 @endcode
 */
 void ELClientMqtt::publish(const __FlashStringHelper* topic, const uint8_t* data,
