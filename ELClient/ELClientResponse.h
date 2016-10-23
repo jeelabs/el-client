@@ -12,6 +12,8 @@
 
 #include <Arduino.h>
 
+#define VARIABLE_ARG_NUM 255
+
 typedef struct PACKED {
   uint16_t cmd;            /**< Command to execute */
   uint16_t argc;           /**< Number of arguments */

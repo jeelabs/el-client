@@ -35,7 +35,10 @@ typedef enum {
   CMD_REST_REQUEST,    /**< Make request to REST server */
   CMD_REST_SETHEADER,  /**< Define HTML header */
 
-  CMD_SOCKET_SETUP = 30,  /**< Setup socket connection */
+  CMD_WEB_SETUP = 30,  /**< web-server setup */
+  CMD_WEB_DATA,        /**< used for publishing web-server data */
+
+  CMD_SOCKET_SETUP = 40,  /**< Setup socket connection */
   CMD_SOCKET_SEND,        /**< Send socket packet */
 } CmdName; /**< Enumeration of commands supported by esp-link, this needs to match the definition in esp-link! */
 
