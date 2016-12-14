@@ -195,11 +195,9 @@ private:
   uint8_t                    remote_ip[4];
   uint16_t                   remote_port;
 
-  char *                     arg_ptr;
-
-  FP<void, void*>            webServerCb;
-
   struct URL_HANDLER       * handlers;
+  char *                     arg_ptr;
+  FP<void, void*>            webServerCb;
 };
 
 #endif // _EL_CLIENT_WEB_SERVER_H_

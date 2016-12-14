@@ -21,7 +21,7 @@
 	ELClientSocket socket(&esp);
 @endcode
 */
-ELClientSocket::ELClientSocket(ELClient *e) 
+ELClientSocket::ELClientSocket(ELClient *e)
 {
 	_elc = e;
 	remote_instance = -1;
@@ -36,7 +36,7 @@ ELClientSocket::ELClientSocket(ELClient *e)
 	Pointer to ELClientResponse structure
 @warning The content of the response structure is overwritten when the next package arrives!
 */
-void ELClientSocket::socketCallback(void *res) 
+void ELClientSocket::socketCallback(void *res)
 {
 	if (!res) return;
 
@@ -50,7 +50,7 @@ void ELClientSocket::socketCallback(void *res)
 		uint16_t _value = resp->value();
 		Serial.println("Value: "+String(_value));
 	#endif
-	
+
 	resp->popArg(&_resp_type, 1);
 	resp->popArg(&_client_num, 1);
 	resp->popArg(&_len, 2);
@@ -61,13 +61,13 @@ void ELClientSocket::socketCallback(void *res)
 		Serial.print(_client_num);
 		Serial.print(" size: "+String(_len));
 	#endif
-	if (_resp_type == 1) 
+	if (_resp_type == 1)
 	{
 		#ifdef DEBUG_EN
 			int argLen = resp->argLen();
 			Serial.print(" data length: "+String(argLen));
 		#endif
-		resp->popArgPtr(&_data);
+		resp->popArgPtr((void**)&_data);
 		#ifdef DEBUG_EN
 			_data[_len] = '\0';
 			Serial.print(" data: "+String(_data));
@@ -77,7 +77,7 @@ void ELClientSocket::socketCallback(void *res)
 		Serial.println("");
 	#endif
 	_status = 1;
-	if (_hasUserCb) 
+	if (_hasUserCb)
 	{
 		_userCb(_resp_type, _client_num, _len, _data);
 	}
@@ -118,9 +118,9 @@ void ELClientSocket::socketCallback(void *res)
 	socketConnNum = socket.begin(socketServer, socketPort, SOCKET_UDP, socketCb);
 @endcode
 */
-int ELClientSocket::begin(const char* host, uint16_t port, uint8_t sock_mode, void (*userCb)(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data)) 
+int ELClientSocket::begin(const char* host, uint16_t port, uint8_t sock_mode, void (*userCb)(uint8_t resp_type, uint8_t client_num, uint16_t len, char *data))
 {
-	if (userCb != 0) 
+	if (userCb != 0)
 	{
 		_userCb = userCb;
 		_hasUserCb = true;
@@ -136,7 +136,7 @@ int ELClientSocket::begin(const char* host, uint16_t port, uint8_t sock_mode, vo
 
 	ELClientPacket *pkt = _elc->WaitReturn();
 
-	if (pkt && (int32_t)pkt->value >= 0) 
+	if (pkt && (int32_t)pkt->value >= 0)
 	{
 		remote_instance = pkt->value;
 		// return 0;
@@ -157,13 +157,13 @@ int ELClientSocket::begin(const char* host, uint16_t port, uint8_t sock_mode, vo
 	socket.send(socketPacket, 39);
 @endcode
 */
-void ELClientSocket::send(const char* data, int len) 
+void ELClientSocket::send(const char* data, int len)
 {
 	_status = 0;
 	if (remote_instance < 0) return;
 	_elc->Request(CMD_SOCKET_SEND, remote_instance, 2);
 	_elc->Request(data, strlen(data));
-	if (data != NULL && len > 0) 
+	if (data != NULL && len > 0)
 	{
 		_elc->Request(data, len);
 	}
@@ -181,7 +181,7 @@ void ELClientSocket::send(const char* data, int len)
 	socket.send("Message from your Arduino Uno WiFi over TCP socket");
 @endcode
 */
-void ELClientSocket::send(const char* data) 
+void ELClientSocket::send(const char* data)
 {
 	send(data, strlen(data));
 }
@@ -204,7 +204,7 @@ void ELClientSocket::send(const char* data)
 @par Example
 @code
 	#define BUFLEN 266
-	void loop() 
+	void loop()
 	{
 		// process any callbacks coming from esp_link
 		esp.Process();
@@ -233,7 +233,7 @@ void ELClientSocket::send(const char* data)
 	}
 @endcode
 */
-uint16_t ELClientSocket::getResponse(uint8_t *resp_type, uint8_t *client_num, char* data, uint16_t maxLen) 
+uint16_t ELClientSocket::getResponse(uint8_t *resp_type, uint8_t *client_num, char* data, uint16_t maxLen)
 {
 	if (_status == 0) return 0;
 	memcpy(data, _data, _len>maxLen?maxLen:_len);
@@ -266,7 +266,7 @@ uint16_t ELClientSocket::getResponse(uint8_t *resp_type, uint8_t *client_num, ch
 @code
 	#define BUFLEN 266
 	bool haveRemoteResponse = true;
-	void loop() 
+	void loop()
 	{
 		// process any callbacks coming from esp_link
 		esp.Process();
@@ -303,11 +303,11 @@ uint16_t ELClientSocket::getResponse(uint8_t *resp_type, uint8_t *client_num, ch
 	}
 @endcode
 */
-uint16_t ELClientSocket::waitResponse(uint8_t *resp_type, uint8_t *client_num, char* data, uint16_t maxLen, uint32_t timeout) 
+uint16_t ELClientSocket::waitResponse(uint8_t *resp_type, uint8_t *client_num, char* data, uint16_t maxLen, uint32_t timeout)
 {
 	uint32_t wait = millis();
 	while (_status == 0) {
-		if ( millis() - wait < timeout) 
+		if ( millis() - wait < timeout)
 		{
 			_elc->Process();
 		} else {

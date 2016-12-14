@@ -21,7 +21,7 @@ typedef enum
 } WebValueType;
 
 
-static ELClientWebServer * ELClientWebServer::instance = 0;
+ELClientWebServer * ELClientWebServer::instance = 0;
 
 
 /*! ELClientWebServer(ELClient* elClient)
@@ -48,7 +48,7 @@ ELClientWebServer::ELClientWebServer(ELClient* elc) :_elc(elc),handlers(0), arg_
 }
 
 // packet handler for web-server
-static void ELClientWebServer::webServerPacketHandler(void * response)
+void ELClientWebServer::webServerPacketHandler(void * response)
 {
   ELClientWebServer::getInstance()->processResponse((ELClientResponse*)response);
 }
@@ -267,7 +267,7 @@ void ELClientWebServer::setup()
   // register here to the web callback
   // periodic reregistration is required in case of ESP8266 reset
   _elc->Request(CMD_WEB_SETUP, 0, 1);
-  uint32_t cb = &webServerCb;
+  uint32_t cb = (uint32_t)&webServerCb;
   _elc->Request(&cb, 4);
   _elc->Request();
 }
@@ -282,7 +282,7 @@ void ELClientWebServer::processResponse(ELClientResponse *response)
   response->popArg(&remote_port, 2); // remote port
 
   char * url;
-  int urlLen = response->popArgPtr(&url);
+  uint16_t urlLen = response->popArgPtr((void**)&url);
 
   struct URL_HANDLER *hnd = handlers;
   while( hnd != 0 )
@@ -298,7 +298,7 @@ void ELClientWebServer::processResponse(ELClientResponse *response)
     {
       _elc->_debug->print(F("Handler not found for URL:"));
 
-      for(int i=0; i < urlLen; i++)
+      for(uint16_t i=0; i < urlLen; i++)
         _elc->_debug->print( url[i] );
       _elc->_debug->println();
     }
@@ -310,7 +310,7 @@ void ELClientWebServer::processResponse(ELClientResponse *response)
     case WS_BUTTON: // invoked when a button pressed
       {
         char * idPtr;
-        int idLen = response->popArgPtr(&idPtr);
+        int idLen = response->popArgPtr((void**)&idPtr);
 
         // add terminating 0
         char id[idLen+1];
@@ -322,12 +322,12 @@ void ELClientWebServer::processResponse(ELClientResponse *response)
       break;
     case WS_SUBMIT: // invoked when a form submitted
       {
-        int cnt = 4;
+        uint16_t cnt = 4;
 
         while( cnt < response->argc() )
         {
           char * idPtr;
-          int idLen = response->popArgPtr(&idPtr);
+          int idLen = response->popArgPtr((void**)&idPtr);
           int nameLen = strlen(idPtr+1);
           int valueLen = idLen - nameLen -2;
 
@@ -358,9 +358,9 @@ void ELClientWebServer::processResponse(ELClientResponse *response)
   _elc->Request((uint8_t *)&remote_port, 2); // send remote port
 
   if( reason == WS_LOAD )
-    hnd->loadCb( hnd->URL.c_str() );
+    hnd->loadCb( (char*)hnd->URL.c_str() );
   else
-    hnd->refreshCb( hnd->URL.c_str() );
+    hnd->refreshCb( (char*)hnd->URL.c_str() );
 
   _elc->Request((uint8_t *)NULL, 0);         // end indicator
   _elc->Request();                           // finish packet

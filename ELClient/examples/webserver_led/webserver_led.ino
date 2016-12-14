@@ -27,7 +27,7 @@ ELClient esp(&Serial);
 // Initialize the Web-Server client
 ELClientWebServer webServer(&esp);
 
-void ledPageLoadAndRefreshCb(const char * url)
+void ledPageLoadAndRefreshCb(char * url)
 {
   if( digitalRead(LED_PIN) )
     webServer.setArgString(F("text"), F("LED is on"));
@@ -35,7 +35,7 @@ void ledPageLoadAndRefreshCb(const char * url)
     webServer.setArgString(F("text"), F("LED is off"));
 }
 
-void ledButtonPressCb(const char * btnId)
+void ledButtonPressCb(char * btnId)
 {
   String id = btnId;
   if( id == F("btn_on") )
